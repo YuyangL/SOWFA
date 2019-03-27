@@ -1,0 +1,4 @@
+sampledSet/cylinder/cylinderSet.C
+sampledSet/arrayStructured/arrayStructuredSet.C
+
+LIB = $(SOWFA_DIR)/lib/$(WM_OPTIONS)/libSOWFAsampling

@@ -1,0 +1,102 @@
+#!/bin/bash
+
+
+cd src/turbulenceModels/incompressible/LES/
+rmdepall
+wclean
+cd ../../../../
+
+cd src/turbineModels/turbineModelsStandard
+rmdepall
+wclean
+cd ../../../
+
+cd src/turbineModels/turbineModelsOpenFAST
+rmdepall
+wclean
+cd ../../../
+
+cd src/finiteVolume
+rmdepall
+wclean
+cd ../../
+
+cd src/sampling
+rmdepall
+wclean
+cd ../../
+
+cd src/fileFormats
+rmdepall
+wclean
+cd ../../
+
+cd src/postProcessing/functionObjects/utilities
+rmdepall
+wclean
+cd ../../../../
+
+cd applications/utilities/setFieldsABL
+rmdepall
+wclean
+cd ../../../
+
+cd applications/solvers/incompressible/windEnergy/ABLSolver
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/ABLTerrainSolver
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/windPlantSolver.ALM
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/windPlantSolver.ALMAdvanced
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/windPlantSolver.ALMAdvancedOpenFAST
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/windPlantSolver.ADM
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/pisoFoamTurbine.ALM
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/pisoFoamTurbine.ALMAdvanced
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/pisoFoamTurbine.ALMAdvancedOpenFAST
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/pisoFoamTurbine.ADM
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/turbineTestHarness.ALM
+rmdepall
+wclean
+cd ../../../../../
+
+cd applications/solvers/incompressible/windEnergy/turbineTestHarness.ALMAdvanced
+rmdepall
+wclean
+cd ../../../../../

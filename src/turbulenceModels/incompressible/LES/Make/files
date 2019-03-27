@@ -1,0 +1,9 @@
+/* Subgrid-Stress Models */
+dynLagrangianCs/dynLagrangianCs.C
+dynLagrangianCsBound/dynLagrangianCsBound.C
+GenEddyViscABL/GenEddyViscABL.C
+oneEqEddyABL/oneEqEddyABL.C
+SmagorinskyABL/SmagorinskyABL.C
+KosovicOneEqNBA/KosovicOneEqNBA.C
+
+LIB = $(SOWFA_DIR)/lib/$(WM_OPTIONS)/libSOWFAincompressibleLESModels

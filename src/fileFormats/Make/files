@@ -1,0 +1,5 @@
+setWriters = sampledSetWriters
+
+$(setWriters)/vtkStructured/vtkStructuredSetWriterRunTime.C
+
+LIB = $(SOWFA_DIR)/lib/$(WM_OPTIONS)/libSOWFAfileFormats
