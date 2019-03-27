@@ -221,7 +221,7 @@ const
 
 bool kEpsilonABL::read()
 {
-    if (RASModel::read())
+    if (RASModelABL::read())
     {
         Cmu_.readIfPresent(coeffDict());
         C1_.readIfPresent(coeffDict());
@@ -239,7 +239,7 @@ bool kEpsilonABL::read()
 
 void kEpsilonABL::correct()
 {
-    RASModel::correct();
+    RASModelABL::correct();
 
     if (!turbulence_)
     {
@@ -251,8 +251,9 @@ void kEpsilonABL::correct()
     // symm(u_i) returns Sij
     // magSqr of a matrix is the Forbenius norm^2 i.e. sum(elem^2)?
     // [LIMITATION] Prt is constant so not ideal for stable atmospheric stability
-    volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_)))
-    + (1.0/TRef_)*g_&((nut_/Prt)*fvc::grad(T_)));
+    // float Prt = 1.0/3.0;
+    volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_))));
+    tmp<volScalarField> G_buoyant = (1.0/TRef_)*g_&((nut_*3.0)*fvc::grad(T_));
 
     // Update epsilon and G at the wall
     epsilon_.boundaryField().updateCoeffs();
@@ -266,7 +267,7 @@ void kEpsilonABL::correct()
       + fvm::div(phi_, epsilon_)
       - fvm::laplacian(DepsilonEff(), epsilon_)
      ==
-        C1_*G*epsilon_/k_
+        C1_*(G + G_buoyant)*epsilon_/k_
       - fvm::Sp(C2_*epsilon_/k_, epsilon_)
     );
 
@@ -286,7 +287,7 @@ void kEpsilonABL::correct()
       + fvm::div(phi_, k_)
       - fvm::laplacian(DkEff(), k_)
      ==
-        G
+        (G + G_buoyant)
       - fvm::Sp(epsilon_/k_, k_)
     );
 
@@ -301,7 +302,8 @@ void kEpsilonABL::correct()
 
     // ABL update the turbulent thermal diffusity of T transport
     volScalarField& kappat_ = const_cast<volScalarField&>(U().db().lookupObject<volScalarField>(kappatName_));
-    kappat_ = nut_/Prt;
+    // kappat_ = nut_/Prt;
+    kappat_ = nut_*3.0;
 
 }
 

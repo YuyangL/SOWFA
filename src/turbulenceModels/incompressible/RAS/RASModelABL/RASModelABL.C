@@ -87,7 +87,7 @@ RASModelABL::RASModelABL
     TName_(coeffDict_.lookupOrDefault<word>("TName", "T")),
     kappatName_(coeffDict_.lookupOrDefault<word>("kappatName", "kappat")),
     T_(U.db().lookupObject<volScalarField>(TName_)),
-    g_(U.db().loopupObject<uniformDimensionedVectorField>("g")),
+    g_(U.db().lookupObject<uniformDimensionedVectorField>("g")),
     transportDict_
     (
         IOobject
