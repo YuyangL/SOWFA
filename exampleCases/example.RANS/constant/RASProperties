@@ -1,0 +1,36 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.4.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      RASProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "../setUp"
+
+RASModel        $RASModel;
+
+turbulence      on;
+
+printCoeffs     on;
+
+kEpsilonABLCoeffs
+{
+    Cmu              $Cmu;  // Turbulent eddy viscosity coefficient
+    C1              $C1;  // Coefficient of the production term
+    C2              $C2;
+    sigmaEps        $sigmaEps;
+    TName           "T";
+    kappatName      "kappat";
+}
+
+
+// ************************************************************************* //

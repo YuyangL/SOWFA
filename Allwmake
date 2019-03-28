@@ -31,7 +31,7 @@ if [ -z ${OPENFAST_DIR+x} ]
 then
     echo "OPENFAST_DIR is not set. Not compiling OpenFAST interface."
 else
-    if [ -d ${OPENFAST_DIR} ] 
+    if [ -d ${OPENFAST_DIR} ]
     then
 	echo "OPENFAST_DIR is set to '${OPENFAST_DIR}'. Attempting to compile OpenFAST interface."
 	cd src/turbineModels/turbineModelsOpenFAST
@@ -39,7 +39,7 @@ else
 	cd ../../../
     else
 	echo "OPENFAST_DIR is set to '${OPENFAST_DIR}'. Directory doesn't exist or I can't access it. Skipping compilation of OpenFAST interface."
-    fi	
+    fi
 fi
 
 # Custom sampling (this includes sampling on an annulus).
@@ -95,12 +95,17 @@ cd applications/solvers/incompressible/windEnergy/windPlantSolver.ALMAdvanced
 wmake
 cd ../../../../../
 
+# The wind plant solver with RANS and ADM.
+cd applications/solvers/incompressible/windEnergy/windPlantSolver.RANS
+wmake
+cd ../../../../../
+
 
 if [ -z ${OPENFAST_DIR+x} ]
 then
     echo "OPENFAST_DIR is not set. Not compiling OpenFAST solver."
 else
-    if [ -d ${OPENFAST_DIR} ] 
+    if [ -d ${OPENFAST_DIR} ]
     then
 	echo "OPENFAST_DIR is set to '${OPENFAST_DIR}'. Attempting to compile OpenFAST windPlant solver."
         # The wind plant solver with the OpenFAST coupled advanced actuator line.
@@ -109,7 +114,7 @@ else
 	cd ../../../../../
     else
 	echo "OPENFAST_DIR is set to '${OPENFAST_DIR}'. Directory doesn't exist or I can't access it. Skipping compilation of OpenFAST solver."
-    fi	
+    fi
 fi
 
 # The wind plant solver with the actuator disk.
@@ -134,7 +139,7 @@ if [ -z ${OPENFAST_DIR+x} ]
 then
     echo "OPENFAST_DIR is not set. Not compiling OpenFAST solver."
 else
-    if [ -d ${OPENFAST_DIR} ] 
+    if [ -d ${OPENFAST_DIR} ]
     then
 	echo "OPENFAST_DIR is set to '${OPENFAST_DIR}'. Attempting to compile OpenFAST pisoFoam solver."
         # The basic non-buoyant solver with the OpenFAST coupled advanced actuator line.
@@ -143,7 +148,7 @@ else
 	cd ../../../../../
     else
 	echo "OPENFAST_DIR is set to '${OPENFAST_DIR}'. Directory doesn't exist or I can't access it. Skipping compilation of OpenFAST solver."
-    fi	
+    fi
 fi
 
 

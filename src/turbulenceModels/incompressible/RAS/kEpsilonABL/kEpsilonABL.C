@@ -88,6 +88,7 @@ kEpsilonABL::kEpsilonABL
         )
     ),
 
+    // Read k, epsilon, and nut if they're present, otherwise, auto create them
     k_
     (
         IOobject
@@ -137,7 +138,7 @@ kEpsilonABL::kEpsilonABL
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-// Reynolds stress tensor
+// Reynolds stress tensor and write it to file
 // R = 2/3*k*I - nut*(u_i,j + u_i,i)
 // twoSymm returns twice the symmetric part of a tensor, in this case, the tensor is u_i,j
 tmp<volSymmTensorField> kEpsilonABL::R() const
@@ -254,6 +255,7 @@ void kEpsilonABL::correct()
     // float Prt = 1.0/3.0;
     volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_))));
     tmp<volScalarField> G_buoyant = (1.0/TRef_)*g_&((nut_*3.0)*fvc::grad(T_));
+    G += G_buoyant;
 
     // Update epsilon and G at the wall
     epsilon_.boundaryField().updateCoeffs();
@@ -267,7 +269,7 @@ void kEpsilonABL::correct()
       + fvm::div(phi_, epsilon_)
       - fvm::laplacian(DepsilonEff(), epsilon_)
      ==
-        C1_*(G + G_buoyant)*epsilon_/k_
+        C1_*G*epsilon_/k_
       - fvm::Sp(C2_*epsilon_/k_, epsilon_)
     );
 
@@ -287,7 +289,7 @@ void kEpsilonABL::correct()
       + fvm::div(phi_, k_)
       - fvm::laplacian(DkEff(), k_)
      ==
-        (G + G_buoyant)
+        G
       - fvm::Sp(epsilon_/k_, k_)
     );
 

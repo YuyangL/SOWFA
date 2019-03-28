@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+  application       windPlantSolver.RANS;
+
+  libs              ("libuserfiniteVolume.so" "libSOWFAincompressibleRASModels.so");
+
+  startFrom         latestTime;
+
+  startTime         20000.0;
+
+  stopAt            endTime;
+
+  endTime           23600.0;
+
+  deltaT            0.5;
+
+  writeControl      adjustableRunTime;
+
+  writeInterval     200.0;
+
+  purgeWrite        0;
+
+  writeFormat       binary;
+
+  writePrecision    12;
+
+  writeCompression  compressed;
+
+  timeFormat        general;
+
+  timePrecision     12;
+
+  runTimeModifiable yes;
+
+  adjustTimeStep    yes;
+
+  maxCo             0.75;
+
+  maxDeltaT         25.0;
+
+  functions
+  {
+    // #include "calcFvcGrad"
+	#include "sampling/sliceDataInstantaneous_OneTurb"
+	#include "sampling/probesData_OneTurb"
+  }
+
+// ************************************************************************* //
