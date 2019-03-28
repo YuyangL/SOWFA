@@ -95,7 +95,7 @@ kEpsilonABL::kEpsilonABL
             "k",
             runTime_.timeName(),
             mesh_,
-            IOobject::NO_READ,
+            IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
         autoCreateK("k", mesh_)
@@ -107,7 +107,7 @@ kEpsilonABL::kEpsilonABL
             "epsilon",
             runTime_.timeName(),
             mesh_,
-            IOobject::NO_READ,
+            IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
         autoCreateEpsilon("epsilon", mesh_)
@@ -119,7 +119,7 @@ kEpsilonABL::kEpsilonABL
             "nut",
             runTime_.timeName(),
             mesh_,
-            IOobject::NO_READ,
+            IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
         autoCreateNut("nut", mesh_)
@@ -152,7 +152,7 @@ tmp<volSymmTensorField> kEpsilonABL::R() const
                 runTime_.timeName(),
                 mesh_,
                 IOobject::NO_READ,
-                IOobject::NO_WRITE
+                IOobject::AUTO_WRITE
             ),
             ((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_)),
             k_.boundaryField().types()
