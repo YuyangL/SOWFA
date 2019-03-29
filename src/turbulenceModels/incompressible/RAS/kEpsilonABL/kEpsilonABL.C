@@ -248,13 +248,12 @@ void kEpsilonABL::correct()
     }
 
     // Production term P in k and epsilon transport equation, ABL buoyancy term included
-    // G = 2nut*sum(ui,j^2) + 1/TRef*g*nut/Prt*grad(T)
+    // G = 2nut*sum(ui,j^2) + 1/TRef*g*nut*grad(T)
     // symm(u_i) returns Sij
     // magSqr of a matrix is the Forbenius norm^2 i.e. sum(elem^2)?
     // [LIMITATION] Prt is constant so not ideal for stable atmospheric stability
-    // float Prt = 1.0/3.0;
     volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_))));
-    tmp<volScalarField> G_buoyant = (1.0/TRef_)*g_&((nut_*3.0)*fvc::grad(T_));
+    tmp<volScalarField> G_buoyant = (1.0/TRef_)*g_&(nut_*fvc::grad(T_));
     G += G_buoyant;
 
     // Update epsilon and G at the wall
@@ -304,8 +303,7 @@ void kEpsilonABL::correct()
 
     // ABL update the turbulent thermal diffusity of T transport
     volScalarField& kappat_ = const_cast<volScalarField&>(U().db().lookupObject<volScalarField>(kappatName_));
-    // kappat_ = nut_/Prt;
-    kappat_ = nut_*3.0;
+    kappat_ = nut_/Prt_;
 
 }
 

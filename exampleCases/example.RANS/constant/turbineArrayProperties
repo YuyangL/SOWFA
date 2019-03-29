@@ -32,7 +32,7 @@ turbine0
     pointDistType       "uniform";
     pointInterpType     "linear";
     bladeUpdateType     "oldPosition";
-    epsilon              10.0;  // About twice the actuator element length
+    epsilon              10.0;  // About twice the cell size
     forceScalar          1.0;
     inflowVelocityScalar 0.94;
     tipRootLossCorrType "Glauert";

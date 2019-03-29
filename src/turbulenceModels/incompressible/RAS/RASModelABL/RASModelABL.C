@@ -83,7 +83,7 @@ RASModelABL::RASModelABL
     epsilonMin_("epsilonMin", kMin_.dimensions()/dimTime, SMALL),
     omegaMin_("omegaMin", dimless/dimTime, SMALL),
 
-    // ABL parameters declared in RASModelABL.H
+    // Read ABL parameters declared in RASModelABL.H
     TName_(coeffDict_.lookupOrDefault<word>("TName", "T")),
     kappatName_(coeffDict_.lookupOrDefault<word>("kappatName", "kappat")),
     T_(U.db().lookupObject<volScalarField>(TName_)),
@@ -99,7 +99,8 @@ RASModelABL::RASModelABL
             IOobject::NO_WRITE
         )
     ),
-    TRef_(transportDict_.lookup("TRef"))
+    TRef_(transportDict_.lookup("TRef")),
+    Prt_(transportDict_.lookup("Prt"))
 
 {
     kMin_.readIfPresent(*this);

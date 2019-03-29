@@ -116,6 +116,9 @@ protected:
         //- ABL referencce temperature
         dimensionedScalar TRef_;
 
+        //- ABL turbulent Pr number, act as sigmak
+        dimensionedScalar Prt_;
+
 
     // Protected Member Functions
 
