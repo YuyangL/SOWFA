@@ -36,7 +36,8 @@ boundaryField
     }
     east
     {
-        type            inletOutlet;
+        type            zeroGradient;
+        value           uniform 0.000765;
     }
     west
     {
@@ -54,7 +55,8 @@ boundaryField
     }
     north
     {
-        type            inletOutlet;
+        type            zeroGradient;
+        value           uniform 0.000765;
     }
 }
 

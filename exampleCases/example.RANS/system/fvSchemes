@@ -53,7 +53,7 @@ laplacianSchemes
     laplacian(nuEff,U)             Gauss linear corrected;
     laplacian(kappaEff,T)          Gauss linear corrected;
     laplacian(DBEff,B)             Gauss linear corrected;
-    laplacian(nuSgs,U)             Gauss linear corrected;
+    laplacian(nut,U)             Gauss linear corrected;
 }
 
 interpolationSchemes

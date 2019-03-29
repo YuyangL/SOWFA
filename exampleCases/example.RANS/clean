@@ -1,0 +1,19 @@
+#!/bin/bash
+
+rm -rf processor*
+
+rm -rf log.*
+
+rm -rf *.log
+
+rm -rf {1*,2*}
+
+rm -rf stopfile.stop
+
+rm -rf postProcessing
+
+rm -rf turbineOutput
+
+rm -rf nohup.out
+
+rm -rf *~

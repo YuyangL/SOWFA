@@ -60,7 +60,7 @@ dictionaryReplacement
             }
             north
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 300;
             }
             west
@@ -73,7 +73,7 @@ dictionaryReplacement
             }
             east
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 300;
             }
         }
@@ -118,7 +118,8 @@ dictionaryReplacement
         {
             lower
             {
-                type            kqRWallFunction;  // It's simply inletOutlet
+                type            kqRWallFunction;  // It's simply zeroGradient
+                value           uniform 0.1;
             }
             south
             {
@@ -130,7 +131,7 @@ dictionaryReplacement
             }
             north
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.1;
             }
             west
@@ -143,7 +144,7 @@ dictionaryReplacement
             }
             east
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.1;
             }
         }
@@ -154,22 +155,22 @@ dictionaryReplacement
         {
             south
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             north
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             west
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             east
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
         }
@@ -183,27 +184,27 @@ dictionaryReplacement
             lower
             {
                 type            nutkRoughWallFunction;
-                Ks              uniform 2.5;  // min(30z0, 0.5delta)
-                Cs              uniform 0.7784;  // Cs = E/Ks*z0 with E = 9.73
+                Ks              uniform $Ks;  // min(30z0, 0.5delta)
+                Cs              uniform $Cs;  // Cs = E/Ks*z0 with E = 9.73
             }
             south
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             north
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             west
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             east
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
         }
@@ -219,7 +220,7 @@ dictionaryReplacement
             }
             north
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             west
@@ -229,7 +230,7 @@ dictionaryReplacement
             }
             east
             {
-                type            inletOutlet;
+                type            zeroGradient;
                 value           uniform 0.0;
             }
             lower
@@ -339,7 +340,8 @@ dictionaryReplacement
             }
             east
             {
-                type            inletOutlet;
+                type            zeroGradient;
+                value           uniform 0.000765;
             }
             west
             {
@@ -357,7 +359,8 @@ dictionaryReplacement
             }
             north
             {
-                type            inletOutlet;
+                type            zeroGradient;
+                value           uniform 0.000765;
             }
         }
     }
