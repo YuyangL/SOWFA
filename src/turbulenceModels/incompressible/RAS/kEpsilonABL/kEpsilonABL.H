@@ -79,8 +79,7 @@ protected:
             dimensionedScalar C1_;
             dimensionedScalar C2_;
             dimensionedScalar sigmaEps_;
-            // // Prt is read from transport properties and acts as sigmak
-            // dimensionedScalar Prt_;
+            dimensionedScalar sigmak_;
 
 
         // Fields
@@ -127,7 +126,7 @@ public:
         {
             return tmp<volScalarField>
             (
-                new volScalarField("DkEff", nut_/Prt_ + nu())
+                new volScalarField("DkEff", nut_/sigmak_ + nu())
             );
         }
 

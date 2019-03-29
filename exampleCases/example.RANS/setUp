@@ -60,6 +60,7 @@ Cmu                   0.03;                        // Turbulent eddy viscosity c
 C1                    1.21;                      // Coefficient of the production term
 C2                    1.92;
 sigmaEps              1.3;
+sigmak                1.0;          // Usually 1.0
 // Wall model inputs
 // nutkRoughWallFunction
 Ks		      2.5;                  // min(30z0, 0.5delta)

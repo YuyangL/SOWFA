@@ -28,6 +28,7 @@ kEpsilonABLCoeffs
     C1              $C1;  // Coefficient of the production term
     C2              $C2;
     sigmaEps        $sigmaEps;
+    sigmak          $sigmak;
     TName           "T";
     kappatName      "kappat";
 }

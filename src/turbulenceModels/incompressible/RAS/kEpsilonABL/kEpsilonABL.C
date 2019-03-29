@@ -87,6 +87,16 @@ kEpsilonABL::kEpsilonABL
             1.3
         )
     ),
+    // sigmak can also be user specified, like in OF 4.x
+    sigmak_
+    (
+        dimensioned<scalar>::lookupOrAddToDict
+        (
+            "sigmak",
+            coeffDict_,
+            1.0
+        )
+    ),
 
     // Read k, epsilon, and nut if they're present, otherwise, auto create them
     k_
@@ -228,6 +238,8 @@ bool kEpsilonABL::read()
         C1_.readIfPresent(coeffDict());
         C2_.readIfPresent(coeffDict());
         sigmaEps_.readIfPresent(coeffDict());
+        // Read sigmak from dictionary
+        sigmak_.readIfPresent(coeffDict());
 
         return true;
     }
@@ -248,12 +260,12 @@ void kEpsilonABL::correct()
     }
 
     // Production term P in k and epsilon transport equation, ABL buoyancy term included
-    // G = 2nut*sum(ui,j^2) + 1/TRef*g*nut*grad(T)
+    // G = 2nut*sum(ui,j^2) + 1/TRef*g*nut/Prt*grad(T)
     // symm(u_i) returns Sij
     // magSqr of a matrix is the Forbenius norm^2 i.e. sum(elem^2)?
     // [LIMITATION] Prt is constant so not ideal for stable atmospheric stability
     volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_))));
-    tmp<volScalarField> G_buoyant = (1.0/TRef_)*g_&(nut_*fvc::grad(T_));
+    tmp<volScalarField> G_buoyant = (1.0/TRef_)*g_&(nut_/Prt_*fvc::grad(T_));
     G += G_buoyant;
 
     // Update epsilon and G at the wall
