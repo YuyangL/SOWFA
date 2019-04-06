@@ -190,7 +190,7 @@ dictionaryReplacement
             lower
             {
                 type            nutkRoughWallFunction;
-                Ks              uniform $Ks;  // min(30z0, 0.5delta)
+                Ks              uniform $Ks;  // min(20z0, 0.5delta)
                 Cs              uniform $Cs;  // Cs = E/Ks*z0 with E = 9.73
             }
             south
@@ -351,6 +351,17 @@ dictionaryReplacement
             }
             west
             {
+                type            fixedValue;
+                value           uniform 0.000765;
+            }
+            south
+            {
+                type            fixedValue;
+                value           uniform 0.000765;
+            }
+            /*
+            west
+            {
                 type            turbulentMixingLengthDissipationRateInlet;
                 mixingLength    1;  // ?
                 k               "k";
@@ -363,6 +374,7 @@ dictionaryReplacement
                 k               "k";
                 value           uniform 200;  // Placeholder
             }
+            */
             north
             {
                 type            zeroGradient;

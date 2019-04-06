@@ -24,11 +24,11 @@ printCoeffs     on;
 
 kEpsilonABLCoeffs
 {
-    Cmu              $Cmu;  // Turbulent eddy viscosity coefficient
+    Cmu             $Cmu;  // Turbulent eddy viscosity coefficient
     C1              $C1;  // Coefficient of the production term
     C2              $C2;
     sigmaEps        $sigmaEps;
-    sigmak          $sigmak;
+    sigmak          $sigmak;  // Usually 1.0
     TName           "T";
     kappatName      "kappat";
 }

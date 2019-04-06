@@ -88,6 +88,7 @@ RASModelABL::RASModelABL
     kappatName_(coeffDict_.lookupOrDefault<word>("kappatName", "kappat")),
     T_(U.db().lookupObject<volScalarField>(TName_)),
     g_(U.db().lookupObject<uniformDimensionedVectorField>("g")),
+    // Read the following ABL parameters from constant/transportDict
     transportDict_
     (
         IOobject
@@ -99,8 +100,17 @@ RASModelABL::RASModelABL
             IOobject::NO_WRITE
         )
     ),
-    TRef_(transportDict_.lookup("TRef")),
-    Prt_(transportDict_.lookup("Prt"))
+    TRef_(transportDict_.lookupOrDefault<scalar>("TRef", 300.0)),
+    Prt_(transportDict_.lookupOrDefault<scalar>("Prt", 0.85)),
+    // zetaRef_(transportDict_.lookupOrDefault<scalar>("zetaRef", 0.0)),
+    // IRef_(transportDict_.lookup("IRef")),
+    z0_(transportDict_.lookup("z0")),
+    kappa_(transportDict_.lookupOrDefault<scalar>("kappa", 0.4)),
+    zRef_(transportDict_.lookup("zRef")),
+    // U magnitude at reference height
+    URef_(transportDict_.lookup("Uref")),
+    // Surface heat flux rate
+    qs_(transportDict_.lookup("qs"))
 
 {
     kMin_.readIfPresent(*this);

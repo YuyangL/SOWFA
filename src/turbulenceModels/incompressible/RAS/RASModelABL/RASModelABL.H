@@ -110,14 +110,35 @@ protected:
         //- ABL gravity vector field
         const uniformDimensionedVectorField& g_;
 
-        //- ABL transport dictionary in constant/ where TRef is specified
+        //- ABL transport dictionary in constant/ where TRef, Prt is specified
         IOdictionary transportDict_;
 
         //- ABL referencce temperature
-        dimensionedScalar TRef_;
+        const dimensionedScalar TRef_;
 
-        //- ABL turbulent Pr number, act as sigmak
-        dimensionedScalar Prt_;
+        //- ABL turbulent Pr number
+        const dimensionedScalar Prt_;
+
+        // //- ABL reference Monin-Obukhov stability parameter at reference height
+        // dimensionedScalar zetaRef_;
+
+        // //- ABL reference turbulence intensity at reference height
+        // const dimensionedScalar IRef_;
+
+        //- ABL surface roughness height
+        const dimensionedScalar z0_;
+
+        //- Von Karman constant
+        const dimensionedScalar kappa_;
+
+        //- ABL reference height
+        const dimensionedScalar zRef_;
+
+        //- ABL reference velocity magnitude at reference height
+        const dimensionedScalar URef_;
+
+        //- ABL heat flux rate at ground surface
+        const dimensionedVector qs_;
 
 
     // Protected Member Functions

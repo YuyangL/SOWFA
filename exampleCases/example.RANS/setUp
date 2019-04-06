@@ -63,7 +63,7 @@ sigmaEps              1.3;
 sigmak                1.0;          // Usually 1.0
 // Wall model inputs
 // nutkRoughWallFunction
-Ks		      2.5;                  // min(30z0, 0.5delta)
+Ks		      2.5;                  // min(20z0, 0.5delta)
 Cs		      0.7784;               // Cs = E/Ks*z0 with E = 9.73
 
 
@@ -80,11 +80,11 @@ z0                   0.2;                        // Surface roughness (m).
 //alphaH               1.0;                         // Monin-Obukhov wall temperature flux model constant.
 //heatingRate          0.0;                         // Surface temperature change rate (when not directly setting temperature flux) (K/s).
 //NEUTRAL and UNSTABLE
-betaM                16.0;
-gammaM               5.0;
-betaH                9.0;
-gammaH               7.8;
-alphaH               1.0;
+betaM                16.0;  // gamma1 of unstable Phi_m in Paul van der Laan (2016)
+gammaM               5.0;  // beta of stable Phi_m in Paul van der Laan (2016)
+betaH                9.0;  // gamma2 of unstable Phi_h in Paul van der Laan (2016)
+gammaH               7.8;  // beta of stable Phi_h in Paul van der Laan (2016)
+alphaH               1.0;  // sigma_theta of unstable/stable Phi_m/h in Paul van der Laan (2016)
 
 
 #inputMode           merge

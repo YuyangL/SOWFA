@@ -40,6 +40,8 @@ Description
             C1          1.21;  // 1.44;
             C2          1.92;
             sigmaEps    1.3;
+            sigmak      1.0;
+            beta
         }
     \endverbatim
 SourceFiles
@@ -73,17 +75,38 @@ protected:
 
     // Protected data
 
-        // Model coefficients
-
+        // Standard model coefficients
             dimensionedScalar Cmu_;
             dimensionedScalar C1_;
             dimensionedScalar C2_;
             dimensionedScalar sigmaEps_;
+            // Added sigmak
             dimensionedScalar sigmak_;
+
+        // MOST Phi_m/h coefficients
+        // beta is coefficient of zeta for stable Phi_m/h
+        // gamma1 is coefficient of zeta for unstable Phi_m
+        // gamma2 is coefficient of zeta for unstable Phi_h
+            dimensionedScalar beta_;
+            dimensionedScalar gamma1_;
+            dimensionedScalar gamma2_;
+
+        // Provided k-epsilon MOST model coefficients
+        // U* is friction speed, if not provided, U* will be inferred from Rwall symmTensor field
+        // zetaRef is reference Monin-Obukhov stability parameter at reference height
+        // IRef is reference turbulence intensity at reference height
+            dimensionedScalar Ustar_;
+            dimensionedScalar zetaRef_;
+            // scalar Iref_;
+
+        // Calculated k-epsilon MOST model coefficients,
+        // Sk the dimensioned source in TKE transport,
+        // C3 the coefficient of buoyancy source/sink in epsilon transport
+            dimensionedScalar Sk_;
+            dimensionedScalar C3_;
 
 
         // Fields
-
             volScalarField k_;
             volScalarField epsilon_;
             volScalarField nut_;
@@ -121,7 +144,7 @@ public:
         }
 
         //- Return the effective diffusivity for k
-        // According Van der Laan (2014), DkEff = (nut/sigmak + nu), where sigmak is Prt in OpenFOAM
+        // According Van der Laan (2014), DkEff = (nut/sigmak + nu)
         tmp<volScalarField> DkEff() const
         {
             return tmp<volScalarField>
