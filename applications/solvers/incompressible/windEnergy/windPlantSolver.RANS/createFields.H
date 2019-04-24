@@ -207,6 +207,29 @@
         mesh
     );
 
+    // Create the Reynolds stress field
+    Info << "Creating the Reynolds stress field, R..." << endl;
+    volSymmTensorField R
+    (
+        IOobject
+        (
+            "R",
+            runTime.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        turbulence->R()
+        // mesh,
+        // // Since NO_READ, initial values have to be provided
+        // dimensionedSymmTensor
+        // (
+        //     "zero",
+        //     Rwall.dimensions(),
+        //     symmTensor (0, 0, 0, 0, 0, 0)
+        // )
+    );
+
     // Create the wall temperature flux field
     Info << "Reading and creating the wall temperature flux field, qwall..." << endl;
     volVectorField qwall

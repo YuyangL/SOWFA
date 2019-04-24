@@ -41,7 +41,7 @@ Description
             C2          1.92;
             sigmaEps    1.3;
             sigmak      1.0;
-            beta
+            beta        5.0;
         }
     \endverbatim
 SourceFiles
