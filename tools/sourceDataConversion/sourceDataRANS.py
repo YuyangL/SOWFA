@@ -7,21 +7,11 @@
 # Modified by Yuyang Luan
 
 
-
-
-
-
-
-
-
-
 # Figure out how many time directories there are within a directory, and put
 # them in numerical order.
 def getOutputTimes(dir):
   # Import necessary modules
   import os
-
-
   data = os.listdir(dir)
   outputTimesI = []
   outputTimes = []
@@ -44,28 +34,15 @@ def getOutputTimes(dir):
   for i in range(nTimes):
      outputTimes.append(outputTimesI[outputTimesSort[i][0]])
 
-
   return nTimes, outputTimes
-
-
-
-
-
-
-
-
 
 
 # Assemble a complete source history.
 def assembleSourceHistory(inputDir):
   # Import necessary modules
   import numpy as np
-
-
   # Get the number of time directories and their names.
   [nTimes, outputTimes] = getOutputTimes(inputDir)
-
-
   # Initialize the big arrays.
   timeMomentumX = []
   timeMomentumY = []
@@ -175,17 +152,7 @@ def assembleSourceHistory(inputDir):
                timeTemperatureI = []
                sourceTemperatureI = []
 
-
-
   return heightMomentum,heightTemperature,timeMomentumX,timeMomentumY,timeMomentumZ,timeTemperature,sourceMomentumX,sourceMomentumY,sourceMomentumZ,sourceTemperature
-
-
-
-
-
-
-
-
 
 
 # Read a single source history file.
@@ -228,9 +195,6 @@ def readSourceHistoryFile(inputFile):
      time = np.transpose(np.array(data[:,0],dtype='float'))
      source = np.array(data[:,2:],dtype='float')
 
-
-
-
   return heights, time, source
 
 
@@ -244,8 +208,8 @@ def selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, st
     iStart, iStop, startTimesReal, stopTimesReal = np.empty(4), np.empty(4), np.empty(4), np.empty(4)
     timesSelected = []
     for i in range(4):
-        startTimes[i] = timesAll[0][0] if startTimes[i] is None else startTimes[i]
-        stopTimes[i] = timesAll[1] if stopTimes[i] is None else stopTimes[i]
+        startTimes[i] = timesAll[i][0] if startTimes[i] is None else startTimes[i]
+        stopTimes[i] = timesAll[i][-1] if stopTimes[i] is None else stopTimes[i]
         # Bisection left to find actual starting and ending time and their indices
         (iStart[i], iStop[i]) = np.searchsorted(timesAll[i], (startTimes[i], stopTimes[i]))
         # If stopTime larger than any time, iStop = len(timesAll[i])
@@ -253,9 +217,9 @@ def selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, st
         # Actual start and stop times
         startTimesReal[i], stopTimesReal[i] = timesAll[i][iStart[i]], timesAll[i][iStop[i]]
         # Append selected time list to a list
-        timesSelected.append(timesAll[i][iStart[i]:(iStop[i] + 1)])
+        timesSelected.append(timesAll[i][iStart[i]:iStop[i]])
 
-    print('\nTime and index information extracted for ' + str(startTimesReal) + ' s - ' + str(stopTimesReal) + ' s')
+    print('\nTime and index information extracted for ' + str(startTimesReal) + ' s - ' + str(stopTimesReal) + ' s for each momentum in x, y, z, and temperature')
     return timesSelected, startTimesReal, stopTimesReal, iStart, iStop
 
 
@@ -268,8 +232,8 @@ def calculateAverage(heightMomentum, heightTemperature,
     # Assign each selected time list to corresponding sources
     timeMomentumX_selected, timeMomentumY_selected, timeMomentumZ_selected, timeTemperature_selected = timesSelected[0], timesSelected[1], timesSelected[2], timesSelected[3]
     # Get 4 selected sources from selected times
-    sourceMomentumX_selected, sourceMomentumY_selected, sourceMomentumZ_selected = sourceMomentumX[iStart:iStop],sourceMomentumY[iStart:iStop], sourceMomentumZ[iStart:iStop]
-    sourceTemperature_selected = sourceTemperature[iStart:iStop]
+    sourceMomentumX_selected, sourceMomentumY_selected, sourceMomentumZ_selected = sourceMomentumX[iStart[0]:iStop[0]],sourceMomentumY[iStart[1]:iStop[1]], sourceMomentumZ[iStart[2]:iStop[2]]
+    sourceTemperature_selected = sourceTemperature[iStart[3]:iStop[3]]
     # Create a list of source*time according to heights
     sourceTimeMomentumX, sourceTimeMomentumY, sourceTimeMomentumZ = np.zeros_like(np.array(heightMomentum)), np.zeros_like(np.array(heightMomentum)), np.zeros_like(np.array(heightMomentum))
     sourceTimeTemperature = np.zeros_like(np.array(heightTemperature))
@@ -298,13 +262,14 @@ def calculateAverage(heightMomentum, heightTemperature,
         sourceMomentumX_mean, sourceMomentumY_mean, sourceMomentumZ_mean = sourceTimeMomentumX/np.sum(timeMomentumX_selected), sourceTimeMomentumY/np.sum(timeMomentumY_selected), sourceTimeMomentumZ/np.sum(timeMomentumZ_selected)
         sourceTemperature_mean = sourceTimeTemperature/np.sum(timeTemperature_selected)
 
-    return sourceMomentumX_mean, sourceMomentumY_mean, sourceMomentumZ_mean, sourceTemperature_mean
+    return sourceMomentumX_mean, sourceMomentumY_mean, sourceMomentumZ_mean, sourceTemperature_mean, startTimesReal, stopTimesReal
 
 
 # Write out the mean source file that will become SOWFA RANS input.
-def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMomentumX_mean, sourceMomentumY_mean,sourceMomentumZ_mean, sourceTemperature_mean):
+def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMomentumX_mean, sourceMomentumY_mean,sourceMomentumZ_mean, sourceTemperature_mean, startTimesReal, stopTimesReal):
     # Open the file.
     fid = open(fileName,'w')
+    fid.write('// Sources averaged from {} s to {} s\n'.format(startTimesReal[0], stopTimesReal[0]))
     # Write the momentum source height list.
     fid.write('sourceHeightsMomentum\n')
     fid.write('(\n')
@@ -313,14 +278,14 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
 
     fid.write(');\n\n')
     # New placeholder time column for RANS
-    timesNew = (0, 999999)
+    timesNew = (0.0, 999999.9)
     # Write the x-momentum table
     fid.write('sourceTableMomentumX\n')
     fid.write('(\n')
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightMomentum)):
-            textStr = textStr + ' ' + str(sourceMomentumX_mean[i])
+            textStr = textStr + ' ' + str(sourceMomentumX_mean[i][0])
 
         textStr = textStr + ')\n'
         fid.write(textStr)
@@ -332,7 +297,7 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightMomentum)):
-            textStr = textStr + ' ' + str(sourceMomentumY_mean[i])
+            textStr = textStr + ' ' + str(sourceMomentumY_mean[i][0])
 
         textStr = textStr + ')\n'
         fid.write(textStr)
@@ -344,7 +309,7 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightMomentum)):
-            textStr = textStr + ' ' + str(sourceMomentumZ_mean[i])
+            textStr = textStr + ' ' + str(sourceMomentumZ_mean[i][0])
 
         textStr = textStr + ')\n'
         fid.write(textStr)

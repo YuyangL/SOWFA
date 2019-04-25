@@ -133,7 +133,8 @@ kEpsilonABL::kEpsilonABL
         (
             "Ustar",
             coeffDict_,
-            123456789.0  // Placeholder
+            123456789.0,  // Placeholder
+            dimensionSet(0, 1, -1, 0, 0, 0, 0)  // Not sure if this is any useful since only value is needed
         )
     ),
     // zetaRef will be inferred by U* and qs if not provided
@@ -148,17 +149,17 @@ kEpsilonABL::kEpsilonABL
     ),
     // // IRef has to be provided
     // IRef_(readScalar(coeffDict_.lookup("IRef"))),
-    // Calculated source term for TKE transport, same dimension as Dk/Dt
-    Sk_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "Sk",
-            coeffDict_,
-            kMin_dimensions()/dimTime,
-            0.0  // For neutral stability
-        )
-    ),
+    // // Calculated source term for TKE transport, same dimension as Dk/Dt
+    // Sk_
+    // (
+    //     dimensioned<scalar>::lookupOrAddToDict
+    //     (
+    //         "Sk",
+    //         coeffDict_,
+    //         0.0,  // For neutral stability
+    //         // kMin_.dimensions()/dimTime
+    //     )
+    // ),
     // Calculated coefficient for buoyancy source/sink in epsilon transport
     C3_
     (
@@ -206,6 +207,21 @@ kEpsilonABL::kEpsilonABL
             IOobject::AUTO_WRITE
         ),
         autoCreateNut("nut", mesh_)
+    ),
+    // Source term volScalarField in TKE transport
+    Sk_
+    (
+        IOobject
+        (
+            "Sk",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE,  // NO_READ and NO_WRITE by default
+            false  // Don't register object
+        ),
+        U.mesh(),
+        dimensionedScalar("Sk", epsilon_.dimensions(), 1.0)
     )
 {
     bound(k_, kMin_);
@@ -223,25 +239,38 @@ kEpsilonABL::kEpsilonABL
     nut_ = Cmu_*sqr(k_)/epsilon_;
     nut_.correctBoundaryConditions();
 
+    // Initialize source term for TKE transport, a single value to be multiplied by Sk later to form a volScalarField
+    scalar Sk_val = 0.0;
+
+    // Initialize Obukhov length to 0
+    dimensionedScalar L_("L_", dimensionSet(0, 1, 0, 0, 0, 0, 0), 0.0);
     // If stable/unstable stability, process U*, L, and zetaRef
-    if (qs_.z() != 0.0)
+    // For some reason qs_.z() doesn't work
+    if (qs_.component(2).value() != 0.0)
     {
         // If U* not provided, calculate U* by reading Rwall field at surface and do
         // U* = (mean(u'w')^2 + mean(v'w')^2)^(1/4)
         if (Ustar_.value() == 123456789.0)
         {
-            // Set up access to the internal Reynolds stress field (all 0 except at surface).
-            const volSymmTensorField& Rwall = db().objectRegistry::lookupObject<volSymmTensorField>("Rwall");
+            // Set up access to the internal Reynolds stress field (all 0 except at surface)
+            // Access it from U's database
+            const volSymmTensorField& Rwall = U.db().lookupObject<volSymmTensorField>("Rwall");
+            const volScalarField Rwall_xz(Rwall.component(symmTensor::XZ));
+            const volScalarField Rwall_yz(Rwall.component(symmTensor::YZ));
             // Set up access to mesh
-            const fvMesh& mesh = Rwall.mesh()
-            // Find the surface patch
-            const label patchI = mesh.boundaryMesh().findPatchID("lower")
-            // const symmTensorField Rwall_surface = Rwall.boundaryField()[patchI].patchInternalField()
-            // Total volume of the surface patch
-            scalar vol = gSum(mesh.V().boundaryField()[patchI]);
-            // Volume weighted average of u'w', v'w' at surface cells
-            scalar Rwall_xz_avg = mesh.V().boundaryField()[patchI]*Rwall.boundaryField()[patchI].xz()/vol;
-            scalar Rwall_yz_avg = mesh.V().boundaryField()[patchI]*Rwall.boundaryField()[patchI].yz()/vol;
+            const fvMesh& mesh = Rwall.mesh();
+            // Find the surface patch ID
+            const label patchID = mesh.boundaryMesh().findPatchID("lower");
+            // Surface area field of the whole mesh
+            const surfaceScalarField& magSf = mesh.magSf();
+            // Calculate total area of the lower boundary patch
+            scalar area = gSum(magSf.boundaryField()[patchID]);
+            // Calculate sum(Rwall_i*area_i) of the lower boundary patch, for u'w' and v'w' component
+            scalar areaRwall_xz = gSum(magSf.boundaryField()[patchID]*Rwall_xz.boundaryField()[patchID]);
+            scalar areaRwall_yz = gSum(magSf.boundaryField()[patchID]*Rwall_yz.boundaryField()[patchID]);
+            // Calculate area weighted average of Rwall = sum(Rwall_i*area_i)/sum(area)
+            scalar Rwall_xz_avg = areaRwall_xz/area;
+            scalar Rwall_yz_avg = areaRwall_yz/area;
             // Calculate U*
             Ustar_.value() = pow(sqr(Rwall_xz_avg) + sqr(Rwall_yz_avg), 0.25);
             Info << " U* is not provided and is inferred from Rwall symmTensor field as " << Ustar_.value() << " m/s" << endl;
@@ -250,11 +279,11 @@ kEpsilonABL::kEpsilonABL
         // Obukhov length
         // volScalarField L_ = pow(Ustar_, 3.0)/kappa_/G_buoyant;
         // Note that g is negative itself
-        scalar L_ = pow(Ustar_, 3.0)*TRef_/kappa_/(g_&qs_);
+        L_.value() = pow(Ustar_.value(), 3.0)*TRef_.value()/kappa_.value()/(g_.value()&qs_.value());
         // If zetaRef not provided, infer zetaRef from U*, L, zRef and qs
         if (zetaRef_.value() == 123456789.0)
         {
-            zetaRef_.value() = zRef_/L_;
+            zetaRef_ = zRef_/L_;
             Info << " zetaRef is not provided and is inferred from U*, L, zRef, and qs as " << zetaRef_.value() << ", bounded to (-2, 1)" << endl;
             // Bound zetaRef to (-2, 1) as per Van der Laan (2016)
             zetaRef_.value() = max(-2.0, zetaRef_.value());
@@ -270,47 +299,46 @@ kEpsilonABL::kEpsilonABL
     // Monin-Obukhov stability parameter
     // volScalarField zeta_ = -kappa_*z_&&(1.0/pow(Ustar_, 3.0))&&(1.0/G_buoyant);
 
-    // Calculate TKE transport source term Sk and epsilon tranport buoyancy source/sink coefficient C3
+    // Calculate TKE transport source term Sk_ and epsilon transport buoyancy source/sink coefficient C3
     // If unstable ABL
-    if (zetaRef_ < 0.0)
+    if (zetaRef_.value() < 0.0)
     {
-        scalar phiM_ = pow(1 - gamma1_*zetaRef_, -0.25);
-        scalar phiH_ = Prt_*pow(1 - gamma2_*zetaRef_, -0.5);
-        scalar phiEps_ = 1.0 - zetaRef_;
-        scalar fst_ = (2.0 - zetaRef_) + gamma1_/2.0*(1.0 - 12.0*zetaRef_ + 7*sqr(zetaRef_)) - sqr(gamma1)/16.0*zetaRef_*(3.0 - 54.0*zetaRef_ + 35.0*sqr(zetaRef_));
-        scalar feps_ = pow(phiM_, 2.5)*(1.0 - 0.75*gamma1_*zetaRef_);
+        scalar phiM_ = pow(1 - gamma1_.value()*zetaRef_.value(), -0.25);
+        scalar phiH_ = Prt_.value()*pow(1 - gamma2_.value()*zetaRef_.value(), -0.5);
+        scalar phiEps_ = 1.0 - zetaRef_.value();
+        scalar fst_ = (2.0 - zetaRef_.value()) + gamma1_.value()/2.0*(1.0 - 12.0*zetaRef_.value() + 7.0*sqr(zetaRef_.value())) - sqr(gamma1_.value())/16.0*zetaRef_.value()*(3.0 - 54.0*zetaRef_.value() + 35.0*sqr(zetaRef_.value()));
+        scalar feps_ = pow(phiM_, 2.5)*(1.0 - 0.75*gamma1_.value()*zetaRef_.value());
         // Turbulence intensity at reference height
         // volScalarField IRef_ = sqrt(2.0/3.0*k_)/URef_;
         // scalar Ustar_ = URef_*IRef_*Cmu_*pow(phiEps_, 0.25)*pow(phiM_, 0.25);
         // Constant for TKE transport through diffusion
-        scalar Ckappa_ = sqr(kappa_)/sigmak_/pow(Cmu_, 0.5);
+        scalar Ckappa_ = sqr(kappa_.value())/sigmak_.value()/pow(Cmu_.value(), 0.5);
 
-        Sk_.value() = pow(Ustar_, 3.0)/kappa_/L_*(1.0/zetaRef_*(phiM_ - phiEps_) - phiH_/Prt_/phiM_ - Ckappa_/4.0*pow(phiM_, 6.5)*pow(phiEps_, -1.5)*fst);
+        // Value of Sk_, to be multiplied by Sk to form a volScalarField
+        Sk_val = pow(Ustar_.value(), 3.0)/kappa_.value()/L_.value()*(1.0/zetaRef_.value()*(phiM_ - phiEps_) - phiH_/Prt_.value()/phiM_ - Ckappa_/4.0*pow(phiM_, 6.5)*pow(phiEps_, -1.5)*fst_);
         // Coefficient to regularize the buoyancy source/sink G_buoyant in epsilon transport
-        C3_.value() = Prt_/zetaRef_*phiM_/phiH_*(C1_*phiM_ - C2*phiEps_ + (C2_ - C1_)*pow(phiEps_, -0.5)*feps_);
+        C3_.value() = Prt_.value()/zetaRef_.value()*phiM_/phiH_*(C1_.value()*phiM_ - C2_.value()*phiEps_ + (C2_.value() - C1_.value())*pow(phiEps_, -0.5)*feps_);
     }
     // Else if stable ABL
-    else if (zetaRef_ > 0.0)
+    else if (zetaRef_.value() > 0.0)
     {
-        scalar phiM_ = 1 + beta_*zetaRef_;
-        scalar phiH_ = Prt_ + beta_*zeta_;
-        scalar phiEps_ = phiM_ - zetaRef_;
-        scalar fst_ = (2.0 - zetaRef_) - 2.0*beta_*zetaRef_*(1.0 - 2.0*zetaRef_ + 2.0*beta_*zetaRef_);
+        scalar phiM_ = 1 + beta_.value()*zetaRef_.value();
+        scalar phiH_ = Prt_.value() + beta_.value()*zetaRef_.value();
+        scalar phiEps_ = phiM_ - zetaRef_.value();
+        scalar fst_ = (2.0 - zetaRef_.value()) - 2.0*beta_.value()*zetaRef_.value()*(1.0 - 2.0*zetaRef_.value() + 2.0*beta_.value()*zetaRef_.value());
         scalar feps_ = pow(phiM_, -2.5)*(2.0*phiM_ - 1.0);
-        // scalar Ustar_ = URef_*IRef_*Cmu_*pow(pihEps_, 0.25)*pow(phiM_, 0.25);
-        scalar Ckappa_ = sqr(kappa_)/sigmak_/pow(Cmu_, 0.5);
+        // scalar Ustar_ = URef_*IRef_*Cmu_.value()*pow(pihEps_, 0.25)*pow(phiM_, 0.25);
+        scalar Ckappa_ = sqr(kappa_.value())/sigmak_.value()/pow(Cmu_.value(), 0.5);
 
-        Sk_.value() = pow(Ustar_, 3.0)/kappa_/L_*(1 - phiH_/Prt_/phiM_ - Ckappa_/4.0*pow(phiM_, -3.5)*pow(phiEps_, -1.5)*fst);
-        C3_.value() = Prt_/zetaRef_*phiM_/phiH_*(C1_*phiM_ - C2*phiEps_ + (C2_ - C1_)*pow(phiEps_, -0.5)*feps_);
+        Sk_val = pow(Ustar_.value(), 3.0)/kappa_.value()/L_.value()*(1 - phiH_/Prt_.value()/phiM_ - Ckappa_/4.0*pow(phiM_, -3.5)*pow(phiEps_, -1.5)*fst_);
+        C3_.value() = Prt_.value()/zetaRef_.value()*phiM_/phiH_*(C1_.value()*phiM_ - C2_.value()*phiEps_ + (C2_.value() - C1_.value())*pow(phiEps_, -0.5)*feps_);
     }
-    // Else if neutral ABL
-    else
-    {
-        Sk_.value() = 0.0;
-        C3_.value() = 0.0;
-    }
+
+    // Convert a scalar to a volScalarField for TKE transport
+    Sk_ *= Sk_val;
 
     printCoeffs();
+    Info << "Source term Sk for TKE transport is " << Sk_val << " m^2/s^3" << endl;
 }
 
 
@@ -408,6 +436,13 @@ bool kEpsilonABL::read()
         sigmaEps_.readIfPresent(coeffDict());
         // Read sigmak from dictionary
         sigmak_.readIfPresent(coeffDict());
+        // The followings are MOST k-epsilon model related coefficients. Does nothing for neutral stability
+        beta_.readIfPresent(coeffDict());
+        gamma1_.readIfPresent(coeffDict());
+        gamma2_.readIfPresent(coeffDict());
+        Ustar_.readIfPresent(coeffDict());
+        zetaRef_.readIfPresent(coeffDict());
+        C3_.readIfPresent(coeffDict());
 
         return true;
     }
@@ -421,6 +456,8 @@ bool kEpsilonABL::read()
 void kEpsilonABL::correct()
 {
     RASModelABL::correct();
+
+    Info << "Source term Sk for TKE transport is " << max(Sk_) << " m^2/s^3" << endl;
 
     if (!turbulence_)
     {
@@ -467,7 +504,7 @@ void kEpsilonABL::correct()
     bound(epsilon_, epsilonMin_);
 
 
-    // TKE transport equation with buoyancy source/sink G_buoyant and additional source Sk
+    // TKE transport equation with buoyancy source/sink G_buoyant and additional source Sk_
     // Why epsilon_/k_*k_?
     tmp<fvScalarMatrix> kEqn
     (

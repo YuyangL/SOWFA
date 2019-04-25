@@ -100,15 +100,15 @@ RASModelABL::RASModelABL
             IOobject::NO_WRITE
         )
     ),
-    TRef_(transportDict_.lookupOrDefault<scalar>("TRef", 300.0)),
-    Prt_(transportDict_.lookupOrDefault<scalar>("Prt", 0.85)),
+    TRef_(transportDict_.lookupOrDefault<dimensionedScalar>("TRef", dimensionedScalar("TRef", T_.dimensions(), 300.0))),
+    Prt_(transportDict_.lookupOrDefault<dimensionedScalar>("Prt",  0.85)),  // If no dimension provided, dimensionedScalar is default dimensionless
     // zetaRef_(transportDict_.lookupOrDefault<scalar>("zetaRef", 0.0)),
     // IRef_(transportDict_.lookup("IRef")),
     z0_(transportDict_.lookup("z0")),
-    kappa_(transportDict_.lookupOrDefault<scalar>("kappa", 0.4)),
+    kappa_(transportDict_.lookupOrDefault<dimensionedScalar>("kappa", 0.4)),
     zRef_(transportDict_.lookup("zRef")),
     // U magnitude at reference height
-    URef_(transportDict_.lookup("Uref")),
+    URef_(transportDict_.lookup("URef")),
     // Surface heat flux rate
     qs_(transportDict_.lookup("qs"))
 

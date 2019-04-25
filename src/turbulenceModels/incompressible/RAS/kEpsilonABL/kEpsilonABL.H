@@ -100,16 +100,16 @@ protected:
             // scalar Iref_;
 
         // Calculated k-epsilon MOST model coefficients,
-        // Sk the dimensioned source in TKE transport,
         // C3 the coefficient of buoyancy source/sink in epsilon transport
-            dimensionedScalar Sk_;
             dimensionedScalar C3_;
 
 
         // Fields
+        // Sk the source term in TKE transport
             volScalarField k_;
             volScalarField epsilon_;
             volScalarField nut_;
+            volScalarField Sk_;
 
 
 public:
@@ -172,6 +172,12 @@ public:
         virtual tmp<volScalarField> epsilon() const
         {
             return epsilon_;
+        }
+
+        //- Return the source term in TKE transport
+        virtual volScalarField Sk() const
+        {
+            return Sk_;
         }
 
         //- Return the Reynolds stress tensor
