@@ -73,10 +73,36 @@ solvers
         $flm;
         relTol          0.0;
     }
-
-
 }
 
+
+PIMPLE
+{
+    momentumPredictor        yes;
+    // 1 means PISO
+    nOuterCorrectors         50;
+    nCorrectors              1;
+    nNonOrthogonalCorrectors 0;
+    pRefCell                 0;
+    pRefValue                0;
+}
+
+relaxationFactors
+{
+    fields
+    {
+        p_rgh                0.3;
+        p_rghFinal           1.0;
+    }
+    equations
+    {
+        "(U|T|k|epsilon|R)"      0.3;
+        "(U|T|k|epsilon|R)Final" 1.0;
+    }
+}
+
+
+/*
 PIMPLE
 {
     momentumPredictor        yes;
@@ -98,5 +124,6 @@ relaxationFactors
         "(U|T|k|epsilon|R)Final" 1.0;
     }
 }
+*/
 
 // ************************************************************************* //

@@ -39,4 +39,4 @@ sdRANS.writeMeanSourceForInput(outputFile,
                             sourceMomentumX, sourceMomentumY,sourceMomentumZ, sourceTemperature,
                             startTimesReal, stopTimesReal)
 
-print('\nsourcesRANS saved after averaging from {} s to {} s. Note that the file needs to be renamed to "sources"'.format(startTimesReal[0], stopTimesReal[0]))
+print('\nsourcesRANS saved after averaging from {} s to {} s and is named as "sourcesRANS"'.format(startTimesReal[0], stopTimesReal[0]))

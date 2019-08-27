@@ -33,8 +33,9 @@ temperatureSourceType    "given";
 
 velocityInputType        "speedAndDirection";
 
-
-#include "../constant/sources"
+// RANS sources will be read by
+// windPlantSolver.C -> createFields.H -> readABLProperties.H
+#include "../constant/sourcesRANS"
 
 
 // Relaxation factors applied when computing sources given desired

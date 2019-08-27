@@ -1,196 +1,163 @@
 #!/bin/bash
 #PBS -j oe
-#PBS -o log.N_H_1T_RANS_Pre.${PBS_JOBID}
-#PBS -N N_H_1T_RANS_Pre
-#PBS -l walltime=01:00:00
-#PBS -l nodes=2:ppn=20
+#PBS -o log.N_H_1T_RANS.${PBS_JOBID}
+#PBS -N N_H_1T_RANS
+#PBS -l walltime=24:00:00
+#PBS -l nodes=2:ppn=20:ib  # :typeiMP
 #PBS -A windsim
 #PBS -m abe
 #PBS -M y.luan@student.tudelft.nl
 
+#################
+# User Inputs
+#################
+# # StopAction kicks in at the last $sleepUntil sec to enable writeNow in system/controlDict
+# sleepUntil=1800  # [s]
+# # Simulation endTime in (not in system/controlDict)
+# endTime=25000  # [s]
 
-precursorDir=/home/yluan/ABL_N_H/
+# Whether move work dir to nodes to speed up data access
+# Only useful if frequent data storage
+moveWORKDIR=0  # 0, 1
 
 
+#################
+# Process User Inputs
+#################
+# # Stop script in case of error
+# set -e
 echo Job started on `uname -n` at `date`
 
-
-# User Input.
-OpenFOAMversion=2.4.0   # OpenFOAM version
-
-# Read the time folder string in precursor directory which is a float
-startTime=`exec ls $precursorDir | sed 's/\([0-9]*\.[0-9]*\)/\1/g' | sort -g | tail -1`                 # Start time
-
-updateBCType=1                  # Boolean for whether or not the boundary condition types will be updated over
-                                #    what is in the initial conditions files. Leave it 0 for precursors.
-inflowDir='southwest'                # For inflow/outflow cases, specify the inflow direction.  Choices are 'west',
-                                #   'east', 'south', 'west', 'southWest', 'northWest', 'southEast', and
-                                #   'northEast'.  There is a 'cyclic' option too in case you need to change
-                                #    back to cyclic or simply update the number of boundary face entries.
-localRefinementLevels=2         # Number of levels of local refinement (requires system/topoSetDict and
-                                #    system/refineHexMeshDict).
-globalRefinementLevels=0        # Number of levels of global refinement.
-# cores=4                         # Enter the number of cores you will preprocess on.
-parallel=1
-
-
-
-
-
-# Define some functions for mesh refinement.
-# Local refinement performed on one core.
-refineMeshLocal()
-{
-   i=$1
-   while [ $i -ge 1 ]
-   do
-      echo "   -Performing level $i local refinement with topoSet/refineHexMesh"
-      echo "      *selecting cells to refine..."
-      topoSet -dict system/topoSetDict.local.$i > log.topoSet.local.$i 2>&1
-
-      echo "      *refining cells..."
-      refineHexMesh local -overwrite > log.refineHexMesh.local.$i 2>&1
-
-
-      let i=i-2  # HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-
-   done
-}
-
-# Global refinement performed in parallel.
-refineMeshGlobal()
-{
-   i=1
-   while [ $i -le $1 ]
-   do
-      echo "   -Performing level $i global refinement with refineMesh"
-      echo "      *refining cells..."
-      # mpirun -np $cores refineMesh -parallel -overwrite > log.refineMesh.global.$i 2>&1
-      mpirun --hostfile $PBS_NODEFILE refineMesh -parallel -overwrite > log.refineMesh.gloabl.$i 2>$1
-
-      let i=i+1
-   done
-}
-
-
-# If running in parallel, cd to job launch directory
-# if [ $cores -gt 1 ]
-if [ $parallel -eq 1 ]
-   then
-   cd $PBS_O_WORKDIR
-fi
-
-
-# Source the bash profile and then call the appropriate OpenFOAM version function
-# so that all the modules and environment variables get set.
-echo "Sourcing the bash profile, loading modules, and setting the OpenFOAM environment variables..."
+# Load OpenFOAM environment
+# shopt -s expand_aliases
 # source $HOME/SOWFA/.bash_profile
-# OpenFOAM-$OpenFOAMversion
-module load openfoam/$OpenFOAMversion
+module load openfoam/2.4.0
 
+# If move working dir to local nodes
+if (( $moveWORKDIR==1 )); then
+    # Create a temporary directory in /var/tmp
+    TMP=/var/tmp/${PBS_JOBID}
+    mkdir -p ${TMP}
+    echo "Temporary work dir: ${TMP}"
+    if [ ! -d "${TMP}" ]; then
+        echo "Cannot create temporary directory. Disk probably full."
+        exit 1
+    fi
 
-# Copy the controlDict.1 (assuming this is the one the actual solver will start
-# out with) to controlDict.  OpenFOAM reads "controlDict", not the numbered ones.
-echo "Getting the control dictionary ready..."
-cp system/controlDict.1 system/controlDict
-# Change startTime to $startTime in controlDict
-# \s means white space
-sed -i "s/startTime\s.*/startTime    $startTime;/" ./system/controlDict
-
-
-echo "Getting the initial condition directory from the precursor..."
-rm -rf $startTime
-cp -rf $precursorDir/$startTime $startTime
-# Remove cell center coordinate that corresponds to the old mesh
-rm -rf $startTime/{cc*,V*}
-# For RANS, nuSgs becomes nut, so rename it
-mv $startTime/nuSgs.gz $startTime/nut.gz
-# Precursor didn't save the TKE disspiation rate epsilon field, create it
-cp 0.original/epsilon $startTime/
-
-
-# Build the mesh.
-echo "Copy the the base mesh from the precursor..."
-rm -rf constant/polyMesh
-cp -rf $precursorDir/constant/polyMesh ./constant
-
-
-# Get the inflow data linked up.
-echo "Linking the inflow data with this directory..."
-rm -rf constant/boundaryData
-ln -s $precursorDir/postProcessing/boundaryData ./constant/
-
-
-# Get the driving source terms linked up.
-echo "Linking the driving source terms with this directory..."
-rm -rf constant/sources
-ln -s $precursorDir/postProcessing/sources ./constant/
-
-
-# The initial fields come from the precursor which is periodic on all sides.  The turbine
-# case has inflow and outflow.  Call the changeDictionary utility to update for inflow/outflow..
-if [ $updateBCType -eq 1 ]
-   then
-   echo "Using changeDictionary to update boundary conditions..."
-   changeDictionary -dict system/changeDictionaryDict.updateBCs.$inflowDir -time $startTime -enableFunctionEntries > log.changeDictionary.updateBCs.$inflowDir.1 2>&1
-fi
-
-
-# Do serial local refinement
-echo "Using refineHexMesh to perform " $localRefinementLevels " of local refinement..."
-refineMeshLocal $localRefinementLevels
-
-
-# If running in paralle from this point forward, then do the following:
-# if [ $cores -gt 1 ]
-if [ $parallel -eq 1 ]
-   then
-   # Decompose the mesh and solution files (serial)
-   echo "Using decomposePar to decompose the problem for parallel processing..."
-   decomposePar -cellDist -force -time $startTime > log.decomposePar 2>&1
-
-   # Check the mesh
-   echo "Running checkMesh to report mesh diagnostics..."
-   # mpirun -np $cores checkMesh -parallel > log.checkMesh.1 2>&1
-   mpirun --hostfile $PBS_NODEFILE checkMesh -parallel > log.checkMesh.1 2>&1
-
-   # Perform global refinement to desired resolution.
-   echo "Using refineMesh to perform " $globalRefinementLevels " of global refinement..."
-   refineMeshGlobal $globalRefinementLevels
-
-   # The mesh got globally refined, but the solution file did not, so
-   # the boundary fields may not have the correct number of entries.
-   # Use the changeDictionary utility to overwrite the spatially varying
-   # boundary data to a uniform single value.
-   if [ $updateBCType -eq 1 ] && [ $globalRefinementLevels -gt 0 ]
-      then
-      echo "Using changeDictionary to ensure that the boundaries have the correct number of faces..."
-      # mpirun -np $cores changeDictionary -dict system/changeDictionaryDict.updateBCs.$inflowDir -time $startTime -enableFunctionEntries -parallel > log.changeDictionary.updateBCs.$inflowDir.1 2>&1
-      mpirun --hostfile $PBS_NODEFILE changeDictionary -dict system/changeDictionary.updateBCs.$inflowDir -time $startTime -enableFunctionEntries -parallel > log.changeDictionary.updateBCs.$inflowDir.2 2>&1
-   fi
-
-   # Renumber the mesh for better matrix solver performance.
-   echo "Using renumberMesh to renumber the mesh for better matrix conditioning..."
-   # mpirun -np $cores renumberMesh -parallel -overwrite -time $startTime > log.renumberMesh 2>&1
-   mpirun --hostfile $PBS_NODEFILE renumberMesh -parallel -overwrite -time $startTime > log.renumberMesh 2>&1
-
-   # Do one last check on the mesh.
-   echo "Running checkMesh to report mesh diagnostics..."
-   # mpirun -np $cores checkMesh -parallel > log.checkMesh.2 2>&1
-   mpirun --hostfile $PBS_NODEFILE checkMesh -parallel > log.checkMesh.2 2>&1
-
-
-# Otherwise, run in serial as follows:
+    # Copy the input files to ${TMP}
+    echo "Copying from ${PBS_O_WORKDIR}/ to ${TMP}/"
+    /usr/bin/rsync -vax "${PBS_O_WORKDIR}/" ${TMP}/
+    cd ${TMP}
+    echo "Working direcrory: " $TMP
 else
-   # Renumber the mesh.
-   echo "Using renumberMesh to renumber the mesh for better matrix conditioning..."
-   renumberMesh -overwrite -time $startTime > log.renumberMesh 2>&1
-
-   # Decompose the mesh and solution files (serial)
-   echo "Using decomposePar to decompose the problem for parallel processing..."
-   decomposePar -cellDist -force -time $startTime > log.decomposePar 2>&1
-
-   # Check the mesh.
-   echo "Running checkMesh to report mesh diagnostics..."
-   checkMesh > log.checkMesh.1 2>&1
+    cd $PBS_O_WORKDIR
+    echo "Working directory: " $PBS_O_WORKDIR
 fi
+
+# # Write the result of the current time step when $sleepUntil sec left of wall time
+# # & means running in background
+# ./StopAction $sleepUntil &
+
+# touch ./${PBS_JOBID}.txt
+# initializer=setFieldsABL
+# Solver choice
+solver=windPlantSolver.RANS
+
+# Find the latestTime by looking at the processor0 folder
+latestTimeInt=`exec ls ./processor0 | sed 's/\([0-9]\+\).*/\1/g' | sort -n | tail -1`
+latestTime=`exec ls ./processor0 | sed 's/\([0-9]*\.[0-9]*\)/\1/g' | sort -n | tail -1`
+
+# Check for latest simulation time
+# (()) is true or false in C
+# Bash only supports integer arithmetic
+if (( $latestTimeInt>0 )); then
+    echo "This is a resume run from " $latestTime " s"
+    # Find runNumber by looking through log files
+    # Look for log.[0-9] files, only keep [0-9], cut the characters other than the first,
+    # sort from low to high, get the last, +1 using $(())
+    # [LIMITATION] Only works for Njobs < 10, job number < 2\+
+    runNumber=$((`exec ls | sed 's/log\.\([0-9]\).*/\1/g' | cut -b1 | sort -n| tail -1` + 1))
+    # Make sure startFrom is latestTime
+    sed -i 's/startFrom\s.*/startFrom    latestTime;/' ./system/controlDict
+# For windPlantSolver.ALM, latest time shouldn't be 0, thus echo warning
+else
+    echo "Time folder in processor*/ not > 0! Something is wrong!"
+    runNumber=1
+    # Make sure startFrom is startTime=0
+    sed -i 's/startFrom\s.*/startFrom    startTime;/' ./system/controlDict
+fi
+
+# # Make sure stopAt is endTime instead of writeNow
+# sed -i 's/stopAt\s.*/stopAt    endTime;/' ./system/controlDict
+# # Make sure endTime is larger than $endTime
+# # so that the actual end time can be saved when stopAt becomes writeNow
+# let fakeEndTime=endTime+10
+# sed -i "s/endTime\s.*/endTime    ${fakeEndTime};/" ./system/controlDict
+
+
+#################
+# Run OpenFOAM in Parallel
+#################
+echo "Starting OpenFOAM job at: " $(date)
+# echo "using " $cores " cores"
+
+# Run the flow field initializer (parallel), not applicable to windPlantSolver.ALM
+if [ $runNumber -eq 10000000000 ]
+    then
+    which $initializer
+    # cp $PBS_O_WORKDIR/system/controlDict.$runNumber $PBS_O_WORKDIR/system/controlDict
+    # echo 'Decomposing the domain...'
+    # decomposePar -cellDist -force  > log.$runNumber.decomposePar 2>&1
+
+    # # Renumber mesh in mpi parallel for better sync
+    # # mpirun -np $cores renumberMesh -parallel -overwrite > log.renumberMesh 2>&1
+    # mpirun --hostfile $PBS_NODEFILE renumberMesh -parallel -overwrite > log.renumberMesh 2>&1
+
+    # # Check mesh quality
+    # # mpirun -np $cores checkMesh -parallel > log.checkMesh 2>&1
+    # mpirun --hostfile $PBS_NODEFILE checkMesh -parallel > log.checkMesh 2>&1
+
+    # Initialize the field
+    # mpirun -np $cores $initializer -parallel > log.$runNumber.$initializer 2>&1
+    mpirun --hostfile $PBS_NODEFILE $initializer -parallel > log.$runNumber.$initializer 2>&1
+    echo 'Finished setting fields'
+    # runNumber=2
+fi
+
+# Create solver log with run number of maximum 10
+touch log.$runNumber.$solver
+
+# # Run a script to check whether simulation reaches targeted endTime, if so,
+# # change stopAt to writeNow and end run, this script is run in background
+# ./checkTargetEndTime.sh $runNumber $endTime $solver &
+
+# Run the solver (parallel)
+which $solver
+echo "Running " $solver
+# mpirun -np $cores $solver -parallel > log.$runNumber.$solver 2>&1
+# Use --hostfile for multiple nodes instead of just multiple cores in 1 node
+mpirun --hostfile $PBS_NODEFILE $solver -parallel > log.$runNumber.$solver 2>&1
+
+
+# #################
+# #  Postprocess
+# #################
+# # If target time not reached but wall time is up,
+# # then checkTargetEndTime has already changed stopAt from endTime to writeNow to save the last progress.
+# # Therefore, reverse writeNow to endTime for next run
+# echo "OpenFOAM run reached wall time, reversing stopAt from writeNow to endTime"
+# # \s means any number of tab or space
+# # .* means find pattern that starts with startAt, don't care what's after
+# # in the same line
+# sed -i 's/stopAt\s.*/stopAt    endTime;/' ./system/controlDict
+
+# For data stored at local nodes, transfer it back
+if (( $moveWORKDIR==1 )); then
+    # Job done, copy everything back
+    echo "Copying from ${TMP}/ to ${PBS_O_WORKDIR}/"
+    /usr/bin/rsync -vax ${TMP}/ "${PBS_O_WORKDIR}/"
+    # Delete my temporary files
+    [ $? -eq 0 ] && /bin/rm -rf ${TMP}
+fi
+
+echo "Ending OpenFOAM job at: " $(date)

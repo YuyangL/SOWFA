@@ -1,3 +1,4 @@
+    // [NOT USED] By windPlantSolver.C in windPlantSolver.RANS
     // Create and read in initial time-averaged velocity field.
     Info << "Creating time-average velocity field, UAvg..." << endl;
     volVectorField UAvg
@@ -251,7 +252,7 @@
         ),
         turbulence->k()
     );
- 
+
     Info<< "Creating the mean SGS turbulent kinetic energy dissipation field, kSGSMean..." << endl;
     volScalarField epsilonSGSmean
     (

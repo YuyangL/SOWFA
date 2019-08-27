@@ -18,7 +18,9 @@ def getOutputTimes(dir):
   nTimes = len(data)
   ii = 0
   for i in range(nTimes):
-     if (unicode(data[i][0]).isnumeric()):
+    # unicode is replace by str in Python 3
+    #  if (unicode(data[i][0]).isnumeric()):
+     if (str(data[i][0]).isnumeric()):
         outputTimesI.append(data[i])
         ii = ii + 1
 
@@ -165,7 +167,7 @@ def readSourceHistoryFile(inputFile):
   # Read the first line
   data = fid.readline()
   if (data[0] == 'H'):
-     print 'Variable with Height'
+     print('Variable with Height')
 
      # Get the source height information.
      heights = data
@@ -178,12 +180,14 @@ def readSourceHistoryFile(inputFile):
      fid.close()
 
      # Read the source data and organize it.
-     data = np.loadtxt(inputFile,dtype='string',skiprows=2)
+    #  data = np.loadtxt(inputFile, dtype='string', skiprows=2)
+    # 'string' doesn't work in Python 3
+     data = np.loadtxt(inputFile, dtype=np.str, skiprows=2)
      time = np.transpose(np.array(data[:,0],dtype='float'))
      source = np.array(data[:,2:],dtype='float')
 
   elif (data[0] == 'T'):
-     print 'Constant with Height'
+     print('Constant with Height')
 
      heights = np.zeros(1);
 
@@ -191,7 +195,8 @@ def readSourceHistoryFile(inputFile):
      fid.close()
 
      # Read the source data and organize it.
-     data = np.loadtxt(inputFile,dtype='string',skiprows=1)
+    #  data = np.loadtxt(inputFile, dtype='string', skiprows=1)
+     data = np.loadtxt(inputFile,dtype=np.str,skiprows=1)
      time = np.transpose(np.array(data[:,0],dtype='float'))
      source = np.array(data[:,2:],dtype='float')
 
@@ -205,11 +210,11 @@ def selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, st
     # List treatment
     startTimes, stopTimes = list(startTimes), list(stopTimes)
     # Go through momentum x, y, z, and temperature
-    iStart, iStop, startTimesReal, stopTimesReal = np.empty(4), np.empty(4), np.empty(4), np.empty(4)
+    iStart, iStop, startTimesReal, stopTimesReal = np.empty(4, dtype=np.int), np.empty(4, dtype=np.int), np.empty(4), np.empty(4)
     timesSelected = []
     for i in range(4):
-        startTimes[i] = timesAll[i][0] if startTimes[i] is None else startTimes[i]
-        stopTimes[i] = timesAll[i][-1] if stopTimes[i] is None else stopTimes[i]
+        if startTimes[i] is None: startTimes[i] = timesAll[i][0]
+        if stopTimes[i] is None: stopTimes[i] = timesAll[i][-1]
         # Bisection left to find actual starting and ending time and their indices
         (iStart[i], iStop[i]) = np.searchsorted(timesAll[i], (startTimes[i], stopTimes[i]))
         # If stopTime larger than any time, iStop = len(timesAll[i])

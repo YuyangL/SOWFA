@@ -52,6 +52,9 @@ dictionaryReplacement
         {
             south
             {
+                // For RANS, it should read
+                // contant/boundaryData/south/0/T and
+                // contant/boundaryData/south/99999/T
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
                 peturb          1e-05;
