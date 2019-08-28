@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
     // From buoyantBoussinesqSimpleFoam
     // Don't need fvOptions as sources and buoyancy forces are manually added
     // #include "createFvOptions.H"
+    #include "initContinuityErrs.H"
 
     simpleControl simple(mesh);
 

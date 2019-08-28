@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.1.x                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      nut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+
+dimensions      [0 2 -1 0 0 0 0];
+
+internalField   uniform $nuSgs0;
+
+boundaryField
+{
+    // nutkAtmRoughWallFunction might be better
+    // although it has to be used with the atmBoundaryLayerInletVelocity boundary condition
+    lower
+    {
+        type            nutkRoughWallFunction;
+        Ks              uniform 2.5;  // min(30z0, 0.5delta)
+        Cs              uniform 0.7784;  // Cs = E/Ks*z0 with E = 9.73
+    }
+    upper
+    {
+        type            fixedValue;
+        value           uniform 0.0;
+    }
+    west
+    {
+        type            cyclic;
+        value           $internalField;
+    }
+    east
+    {
+        type            cyclic;
+        value           $internalField;
+    }
+    north
+    {
+        type            cyclic;
+        value           $internalField;
+    }
+    south
+    {
+        type            cyclic;
+        value           $internalField;
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,9 +1,9 @@
 {
-    volScalarField rAU("rAU", 1.0/UEqn.A());
+    volScalarField rAU("rAU", 1.0/UEqn().A());
     surfaceScalarField rAUf("(1|A(U))", fvc::interpolate(rAU));
 
     volVectorField HbyA("HbyA", U);
-    HbyA = rAU*UEqn.H();
+    HbyA = rAU*UEqn().H();
     // From buoyantBoussinesqSimpleFoam.
     // This seems to be equivalent to nCorrector <= 1
     UEqn.clear();

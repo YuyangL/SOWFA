@@ -2,7 +2,7 @@
 
     #include "computeCoriolisForce.H"
 
-    fvVectorMatrix UEqn
+    tmp<fvVectorMatrix> UEqn
     (
         // fvm::ddt(U)                             // time derivative
         fvm::div(phi, U)                        // convection
@@ -13,7 +13,7 @@
       - SourceU                                 // mesoscale source terms
     );
 
-    UEqn.relax();
+    UEqn().relax();
 
     // Not constraining U to a fixed value using fvOptions as it's done manually with SourceU
     // fvOptions.constrain(UEqn())
@@ -22,7 +22,7 @@
     {
         solve
         (
-            UEqn
+            UEqn()
             ==
             fvc::reconstruct
             (
