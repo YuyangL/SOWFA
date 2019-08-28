@@ -47,6 +47,6 @@ kappa           kappa [0 0 0 0 0 0 0] $kappa;
 // Reference velocity magnitude
 URef            URef [0 1 1 0 0 0 0] $U0Mag;
 // Surface heat flux rate
-qs              qs [0 1 -1 1 0 0 0] $qwall
+qs              qs [0 1 -1 1 0 0 0] $qwall;
 
 // ************************************************************************* //

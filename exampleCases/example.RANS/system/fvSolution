@@ -85,18 +85,27 @@ PIMPLE
     nNonOrthogonalCorrectors 0;
     pRefCell                 0;
     pRefValue                0;
+
+    residualControl
+    {
+        "(U|p_rgh)"
+        {
+            tolerance        1e-4;
+            relTol           0.0;
+        }
+    }
 }
 
 relaxationFactors
 {
     fields
     {
-        p_rgh                0.3;
+        p_rgh                0.6;
         p_rghFinal           1.0;
     }
     equations
     {
-        "(U|T|k|epsilon|R)"      0.3;
+        "(U|T|k|epsilon|R)"      0.6;
         "(U|T|k|epsilon|R)Final" 1.0;
     }
 }

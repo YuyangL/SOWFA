@@ -104,6 +104,8 @@ rm -rf 0
 cp -rf $precursorDir/$startTime 0
 # Remove cell center coordinate that corresponds to the old mesh
 rm -rf 0/{cc*,V*}
+# Also remove uniform that contained the old physical time
+rm -rf 0/uniform
 # For RANS, nuSgs becomes nut, so rename it
 mv 0/nuSgs.gz 0/nut.gz
 # Precursor didn't save the TKE disspiation rate epsilon field, create it
