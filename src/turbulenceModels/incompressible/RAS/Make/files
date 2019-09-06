@@ -1,5 +1,6 @@
 /* RANS Turbulence Models */
-kEpsilonABL/kEpsilonABL.C
-RASModelABL/RASModelABL.C
+kEpsilonABL_scm/kEpsilonABL.C
+/* kEpsilonABL/kEpsilonABL.C */
+/* RASModelABL/RASModelABL.C */
 
 LIB = $(SOWFA_DIR)/lib/$(WM_OPTIONS)/libSOWFAincompressibleRASModels

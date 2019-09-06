@@ -22,6 +22,30 @@ turbulence      on;
 
 printCoeffs     on;
 
+
+kEpsilonCoeffs
+{
+    Cmu              $Cmu;
+    C1               $C1;
+    C2               $C2;
+    sigmaEps         $sigmaEps;
+    sigmak           $sigmak;
+}
+
+// kEpsilonABL from f/scm branch of SOWFA github
+kEpsilonABLCoeffs
+{
+    Cmu              $Cmu;
+    Clambda          0.075;  // Max mixing length coefficient
+    Ceps1            1.52;
+    Ceps2            1.833;
+    sigmaK           2.95;
+    sigmaEps         2.95;
+    kappa            $kappa;
+}
+
+
+/* My own kEpsilonABL model that's not converging for this case
 kEpsilonABLCoeffs
 {
     Cmu             $Cmu;  // Turbulent eddy viscosity coefficient
@@ -32,6 +56,7 @@ kEpsilonABLCoeffs
     TName           "T";
     kappatName      "kappat";
 }
+*/
 
 
 // ************************************************************************* //

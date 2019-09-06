@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-  application       windPlantSolver.RANS;
+  application       windPlantSimpleSolver;
 
   libs              ("libuserfiniteVolume.so" "libSOWFAincompressibleRASModels.so");
 

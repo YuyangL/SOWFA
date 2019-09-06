@@ -85,11 +85,8 @@ SIMPLE
 
     residualControl
     {
-        "(U|p_rgh)"
-        {
-            tolerance        1e-4;
-            relTol           0.0;
-        }
+        // No relTol needed for SimpleFoam
+        "(U|p_rgh)"          1e-5;
     }
 }
 
@@ -97,12 +94,12 @@ relaxationFactors
 {
     fields
     {
-        p_rgh                0.6;
+        p_rgh                0.5;
         p_rghFinal           1.0;
     }
     equations
     {
-        "(U|T|k|epsilon|R)"      0.6;
+        "(U|T|k|epsilon|R)"      0.5;
         "(U|T|k|epsilon|R)Final" 1.0;
     }
 }
