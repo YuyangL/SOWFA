@@ -1,2 +1,2 @@
 # SOWFA
-SOWFA from https://github.com/NREL/SOWFA modified for URANS
+SOWFA from https://github.com/NREL/SOWFA modified for RANS
