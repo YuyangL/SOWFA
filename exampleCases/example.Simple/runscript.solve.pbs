@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -j oe
-#PBS -o log.N_H_1T_SIMPLE.${PBS_JOBID}
-#PBS -N N_H_1T_SIMPLE
+#PBS -o log.N_H_1T_SMP_Blend.${PBS_JOBID}
+#PBS -N N_H_1T_SMP_Blend
 #PBS -l walltime=24:00:00
 #PBS -l nodes=2:ppn=20:ib  # :typeiMP
 #PBS -A windsim

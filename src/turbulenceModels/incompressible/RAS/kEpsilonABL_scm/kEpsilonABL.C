@@ -265,9 +265,6 @@ kEpsilonABL::kEpsilonABL
 
     g_(U.db().lookupObject<uniformDimensionedVectorField>("g")),
 
-    // Read LES anisotropy tensor field bij
-    bij_(U.db().lookupObject<volSymmTensorField>("bij")),
-
     TRef_(transportDict_.lookup("TRef")),
 
     Prt_(transportDict_.lookup("Prt")),
@@ -275,6 +272,8 @@ kEpsilonABL::kEpsilonABL
     upVec_(vector::zero),
 
     // LES-RANS bij mixing related parameters
+    // Read LES anisotropy tensor field bij
+    bij_(U.db().lookupObject<volSymmTensorField>("bij")),
     mix_startTime_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_startTime", 2000)),
     mix_duration_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_duration", 2000)),
     mix_ratio_cap_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_ratio_cap", 0.5))
@@ -369,15 +368,15 @@ tmp<volSymmTensorField> kEpsilonABL::Rmix() const
 
 
 // Effective stress tensor incl. laminar stresses
-// devReff = -(nu + nut)*(u_i,j + u_j,i - 2/3*u_i,i)
+// devReff = -(nu + nut)*(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
 // From Rij_RANS = 2/3*k*I - 2nut*Sij and Rij_LES = 2/3*k*I + 2k*bij,
 // we gather -2nut*Sij ~ 2k*bij
 // Thus we want to replace eddy-visocity assumption 2nut*Sij,
 // and term nut*(u_i,j + u_j,i) -> (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)
-// devReff = - nu*(u_i,j + u_j,i - 2/3*u_i,i)
-//           - nut(u_i,j + u_j,i) + nut*2/3*u_i,i
-//         = - nu*(u_i,j + u_j,i - 2/3*u_i,i)
-//           - ((1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)) + nut*2/3*u_i,i
+// devReff = - nu*(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
+//           - nut(u_i,j + u_j,i) + nut*2/3*u_i,i*delta_ij
+//         = - nu*(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
+//           - ((1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)) + nut*2/3*u_i,i*delta_ij
 // in which nut*2/3*u_i,i should = 0 for incompressible flow due to continuity
 tmp<volSymmTensorField> kEpsilonABL::devReff() const
 {
@@ -402,22 +401,25 @@ tmp<volSymmTensorField> kEpsilonABL::devReff() const
         //    -nuEff()*dev(twoSymm(fvc::grad(U_)))
             - nu()*dev(twoSymm(fvc::grad(U_)))
             - ((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U_)) + mix_ratio*(-2.*k_*bij_))
-            + nut_*2/3.*tr(fvc::grad(U_))
+            + nut_*2/3.*tr(fvc::grad(U_))*I  // tr() is a scalar, thus multiply by I
         )
     );
 }
 
 
 // The source term for the incompressible momentum equation
-// divDevReff(u_i) = -div((nu + nut)u_i,j) - div((nu + nut)(u_i,j - 1/3*u_i,i).T)
-// = -div(nuEff*(u_i,j + (u_i,j).T)), -1/3*u_i,i = 0 due to continuity
+// divDevReff(u_i) = -div((nu + nut)u_i,j) - div((nu + nut)(u_j,i - (1/3*u_j,j)*delta_ji))
+// = -div(nuEff*(u_i,j + u_j,i)), -1/3*u_j,j = 0 due to continuity
 // = -div(nuEff*2Sij)
 // Laplacian of u_i results in 3x1 vector, i.e. same rank as u_i
 // For blending, separate nuEff to nu and nut,
-// and divDevReff(u_i) = -div((nu + nut)(u_i,j + (u_i,j).T))
-// = -div(nu(u_i,j + (u_i,j).T) + 2nut*Sij)
+// and divDevReff(u_i) = -div((nu + nut)(u_i,j + u_j,i))
+// = -div(2nu*Sij + 2nut*Sij)
 // and like devReff(),
-// = -div(nu(u_i,j + (u_i,j).T) + (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij))
+// = -div(2nu*Sij + (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij))
+// And for stabilty that u_j,j is never actually 0, we expand 2nu*Sij back to
+// -div(2nu*Sij) = -div(nu(u_i,j + u_j,i - 1/3*u_j,j*delta_ij))
+//               = -div(nu(u_i,j)) - div(nu*(u_j,i - 1/3*u_j,j*delta_ji)))
 tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
 {
     // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
@@ -430,9 +432,10 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
     (
     //   - fvm::laplacian(nuEff(), U)
     //   - fvc::div(nuEff()*dev(T(fvc::grad(U))))
-        - fvc::div(nu()*twoSymm(fvc::grad(U))
-        + (1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
-        + mix_ratio*(-2.*k_*bij_))
+        - fvm::laplacian(nu(), U)
+        - fvc::div(nu()*dev(T(fvc::grad(U))))
+        - fvc::div((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
+        + mix_ratio*(-2.*k_*bij_))  // bij mixing to nu_t part
     );
 }
 

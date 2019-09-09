@@ -108,6 +108,7 @@ protected:
 
 
         // LES-RANS bij mixing related parameters
+            const volSymmTensorField& bij_;
             dimensionedScalar mix_startTime_;
             dimensionedScalar mix_duration_;
             dimensionedScalar mix_ratio_cap_;

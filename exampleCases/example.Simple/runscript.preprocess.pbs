@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -j oe
-#PBS -o log.N_H_1T_SIMPLE_Pre.${PBS_JOBID}
-#PBS -N N_H_1T_SIMPLE_Pre
+#PBS -o log.N_H_1T_SMP_Blend_Pre.${PBS_JOBID}
+#PBS -N N_H_1T_SMP_Blend_Pre
 #PBS -l walltime=01:00:00
 #PBS -l nodes=2:ppn=20
 #PBS -A windsim
@@ -10,6 +10,7 @@
 
 
 precursorDir=/home/yluan/ABL_N_H/
+lesDir=/home/yluan/scratch/ALM_N_H_OneTurbine/
 
 
 echo Job started on `uname -n` at `date`
@@ -32,9 +33,6 @@ localRefinementLevels=2         # Number of levels of local refinement (requires
 globalRefinementLevels=0        # Number of levels of global refinement.
 # cores=40                         # Enter the number of cores you will preprocess on.
 parallel=0
-
-
-
 
 
 # Define some functions for mesh refinement.
@@ -132,7 +130,6 @@ echo "Linking the driving source terms with this directory..."
 rm -rf constant/sourcesRANS
 ln -s $precursorDir/postProcessing/sourcesRANS ./constant/
 
-
 # The initial fields come from the precursor which is periodic on all sides. The turbine
 # case has inflow and outflow. Call the changeDictionary utility to update for inflow/outflow..
 # Again, time in RANS starts at 0
@@ -142,6 +139,9 @@ if [ $updateBCType -eq 1 ]
    changeDictionary -dict system/changeDictionaryDict.updateBCs.$inflowDir -time 0 -enableFunctionEntries > log.changeDictionary.updateBCs.$inflowDir.1 2>&1
 fi
 
+# Map bij fields from LES to this mesh, the BC of bij from LES is untouched
+echo "Creating bij in ${lesDir} if not already and mapping it to this mesh grid..."
+mapReynoldsStress.sh $lesDir |& tee log.mapReynoldsStress
 
 # Do serial local refinement
 echo "Using refineHexMesh to perform " $localRefinementLevels " of local refinement..."

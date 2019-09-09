@@ -2,7 +2,7 @@
     // for advection of momentum and potential temperature.
 
     // Create the momentum sourc term.
-    Info << "Creating the momentum source term, SourceU..." << endl;
+    Info << "Reading and creating the momentum source term, SourceU..." << endl;
     volVectorField SourceU
     (
         IOobject
@@ -17,7 +17,7 @@
         dimensionedVector("SourceU",dimVelocity/dimTime,vector::zero)
     );
 
-    Info << "Creating the potential temperature source term, SourceT..." << endl;
+    Info << "Reading and creating the potential temperature source term, SourceT..." << endl;
     volScalarField SourceT
     (
         IOobject
