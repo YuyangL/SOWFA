@@ -344,7 +344,7 @@ tmp<volSymmTensorField> kEpsilonABL::Rmix() const
     // Get the current time.
     scalar t = runTime_.value();
     // dimensioned<scalar> tend_ = runTime_.endTime().value();
-    // Mixing ratio of LES-RANS bij, capped on request
+    // Mixing ratio of LES-RANS bij, capped between 0 and cap
     if (t > mix_startTime_.value())
     {
         scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
