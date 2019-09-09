@@ -21,7 +21,7 @@ License
 
 #include "kEpsilonABL.H"
 #include "addToRunTimeSelectionTable.H"
-
+#include "wallFvPatch.H"
 #include "backwardsCompatibilityWallFunctions.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -36,7 +36,7 @@ namespace RASModels
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 defineTypeNameAndDebug(kEpsilonABL, 0);
-addToRunTimeSelectionTable(RASModelABL, kEpsilonABL, dictionary);
+addToRunTimeSelectionTable(RASModel, kEpsilonABL, dictionary);
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -49,129 +49,141 @@ kEpsilonABL::kEpsilonABL
     const word& modelName
 )
 :
-    RASModelABL(modelName, U, phi, transport, turbulenceModelName),
+    RASModel(modelName, U, phi, transport, turbulenceModelName),
 
-    // Default of lookupOrAddToDict is dimensionless
     Cmu_
     (
         dimensioned<scalar>::lookupOrAddToDict
         (
             "Cmu",
             coeffDict_,
-            0.03  // 123456789.0
+            0.03
         )
     ),
-    C1_
+
+    Clambda_
     (
         dimensioned<scalar>::lookupOrAddToDict
         (
-            "C1",
+            "Clamda",
             coeffDict_,
-            1.21
+            0.075
         )
     ),
-    C2_
+
+    Ceps1_
     (
         dimensioned<scalar>::lookupOrAddToDict
         (
-            "C2",
+            "Ceps1",
             coeffDict_,
-            1.92
+            1.52
         )
     ),
-    sigmaEps_
+
+    Ceps2_
     (
         dimensioned<scalar>::lookupOrAddToDict
         (
-            "sigmaEps",
+            "Ceps2",
             coeffDict_,
-            1.3
+            1.833
         )
     ),
-    // sigmak can also be user specified, like in OF 4.x
+
     sigmak_
     (
         dimensioned<scalar>::lookupOrAddToDict
         (
             "sigmak",
             coeffDict_,
-            1.0
-        )
-    ),
-    // Initialize MOST Phi_m/h coefficients
-    beta_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "beta",
-            coeffDict_,
-            5.0
-        )
-    ),
-    gamma1_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "gamma1",
-            coeffDict_,
-            16.0
-        )
-    ),
-    gamma2_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "gamma2",
-            coeffDict_,
-            16.0
-        )
-    ),
-    // U* will be inferred from Rwall symmTensor field if not provided
-    Ustar_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "Ustar",
-            coeffDict_,
-            123456789.0,  // Placeholder
-            dimensionSet(0, 1, -1, 0, 0, 0, 0)  // Not sure if this is any useful since only value is needed
-        )
-    ),
-    // zetaRef will be inferred by U* and qs if not provided
-    zetaRef_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "zetaRef",
-            coeffDict_,
-            123456789.0  // Placeholder
-        )
-    ),
-    // // IRef has to be provided
-    // IRef_(readScalar(coeffDict_.lookup("IRef"))),
-    // // Calculated source term for TKE transport, same dimension as Dk/Dt
-    // Sk_
-    // (
-    //     dimensioned<scalar>::lookupOrAddToDict
-    //     (
-    //         "Sk",
-    //         coeffDict_,
-    //         0.0,  // For neutral stability
-    //         // kMin_.dimensions()/dimTime
-    //     )
-    // ),
-    // Calculated coefficient for buoyancy source/sink in epsilon transport
-    C3_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "C3",
-            coeffDict_,
-            0.0  // For neutral stability
+            2.95
         )
     ),
 
-    // Read k, epsilon, and nut if they're present, otherwise, auto create them
+    sigmaEps_
+    (
+        dimensioned<scalar>::lookupOrAddToDict
+        (
+            "sigmaEps",
+            coeffDict_,
+            2.95
+        )
+    ),
+
+    kappa_
+    (
+        dimensioned<scalar>::lookupOrAddToDict
+        (
+            "kappa",
+            coeffDict_,
+            0.41
+        )
+    ),
+
+    lmax_
+    (
+        "lmax",
+        dimLength,
+        1.0
+    ),
+
+    alphaB_
+    (
+        IOobject
+        (
+            "alphaB",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+       ),
+        mesh_,
+        dimensionedScalar("alphaB",dimless,1.00)
+    ),
+
+    Ceps1Star_
+    (
+        IOobject
+        (
+            "Ceps1Star",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+       ),
+        mesh_,
+        dimensionedScalar("Ceps1Star",dimless,1.52)
+    ),
+
+    Ceps3_
+    (
+        IOobject
+        (
+            "Ceps3",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+       ),
+        mesh_,
+        dimensionedScalar("Ceps3",dimless,1.0)
+    ),
+
+    lm_
+    (
+        IOobject
+        (
+            "lm",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+       ),
+        mesh_,
+        dimensionedScalar("lm",dimLength,1.0)
+    ),
+
     k_
     (
         IOobject
@@ -179,11 +191,12 @@ kEpsilonABL::kEpsilonABL
             "k",
             runTime_.timeName(),
             mesh_,
-            IOobject::READ_IF_PRESENT,
+            IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         autoCreateK("k", mesh_)
     ),
+
     epsilon_
     (
         IOobject
@@ -191,11 +204,12 @@ kEpsilonABL::kEpsilonABL
             "epsilon",
             runTime_.timeName(),
             mesh_,
-            IOobject::READ_IF_PRESENT,
+            IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         autoCreateEpsilon("epsilon", mesh_)
     ),
+
     nut_
     (
         IOobject
@@ -203,149 +217,102 @@ kEpsilonABL::kEpsilonABL
             "nut",
             runTime_.timeName(),
             mesh_,
-            IOobject::READ_IF_PRESENT,
+            IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         autoCreateNut("nut", mesh_)
     ),
-    // Source term volScalarField in TKE transport
-    Sk_
+
+    // // Reynolds stress from LES, read only from time 0
+    // uuPrime2_
+    // (
+    //     IOobject
+    //     (
+    //         "uuPrime2",
+    //         runTime_.timeName(0),  // Only read time 0
+    //         mesh_,
+    //         IOobject::READ_IF_PRESENT,
+    //         IOobject::NO_WRITE
+    //     ),
+    //     mesh_,
+    //     // If not found, it should read as 0 as below
+    //     dimensionedSymmTensor
+    //     (
+    //         "zero",
+    //         dimensionedSet(0, 2, -2, 0, 0, 0, 0),
+    //         symmTensor (0, 0, 0, 0, 0, 0)
+    //     )
+    // )
+
+    transportDict_
     (
         IOobject
         (
-            "Sk",
-            runTime_.timeName(),
-            mesh_,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE,  // NO_READ and NO_WRITE by default
-            false  // Don't register object
-        ),
-        U.mesh(),
-        dimensionedScalar("Sk", epsilon_.dimensions(), 1.0)
-    )
+            "transportProperties",
+            U.time().constant(),
+            U.db(),
+            IOobject::MUST_READ_IF_MODIFIED,
+            IOobject::NO_WRITE
+        )
+    ),
+
+    TName_
+    (
+        coeffDict_.lookupOrDefault<word>("TName","T")
+    ),
+
+    T_(U.db().lookupObject<volScalarField>(TName_)),
+
+    g_(U.db().lookupObject<uniformDimensionedVectorField>("g")),
+
+    // Read LES anisotropy tensor field bij
+    bij_(U.db().lookupObject<volSymmTensorField>("bij")),
+
+    TRef_(transportDict_.lookup("TRef")),
+
+    Prt_(transportDict_.lookup("Prt")),
+
+    upVec_(vector::zero),
+
+    // LES-RANS bij mixing related parameters
+    mix_startTime_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_startTime", 2000)),
+    mix_duration_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_duration", 2000)),
+    mix_ratio_cap_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_ratio_cap", 0.5))
 {
     bound(k_, kMin_);
     bound(epsilon_, epsilonMin_);
 
-    // // [NEUTRAL STABILITY ONLY]
-    // // If Cmu not provided, infer from provided IRef and zRef
-    // // IRef = Cmu^(-1/4)*kappa*sqrt(2/3)/ln(zRef/z0)
-    // // Use .value() since Cmu is "dimensioned" although all zeros
-    // if (Cmu_.value() == 123456789.0)
-    // {
-    //     Cmu_.value() = pow(1.0/(IRef_/kappa_/0.8164965809277*log(zRef_/z0_)), 4.0);
-    // }
-
     nut_ = Cmu_*sqr(k_)/epsilon_;
     nut_.correctBoundaryConditions();
 
-    // Initialize source term for TKE transport, a single value to be multiplied by Sk later to form a volScalarField
-    scalar Sk_val = 0.0;
-
-    // Initialize Obukhov length to 0
-    dimensionedScalar L_("L_", dimensionSet(0, 1, 0, 0, 0, 0, 0), 0.0);
-    // If stable/unstable stability, process U*, L, and zetaRef
-    // For some reason qs_.z() doesn't work
-    if (qs_.component(2).value() != 0.0)
-    {
-        // If U* not provided, calculate U* by reading Rwall field at surface and do
-        // U* = (mean(u'w')^2 + mean(v'w')^2)^(1/4)
-        if (Ustar_.value() == 123456789.0)
-        {
-            // Set up access to the internal Reynolds stress field (all 0 except at surface)
-            // Access it from U's database
-            const volSymmTensorField& Rwall = U.db().lookupObject<volSymmTensorField>("Rwall");
-            const volScalarField Rwall_xz(Rwall.component(symmTensor::XZ));
-            const volScalarField Rwall_yz(Rwall.component(symmTensor::YZ));
-            // Set up access to mesh
-            const fvMesh& mesh = Rwall.mesh();
-            // Find the surface patch ID
-            const label patchID = mesh.boundaryMesh().findPatchID("lower");
-            // Surface area field of the whole mesh
-            const surfaceScalarField& magSf = mesh.magSf();
-            // Calculate total area of the lower boundary patch
-            scalar area = gSum(magSf.boundaryField()[patchID]);
-            // Calculate sum(Rwall_i*area_i) of the lower boundary patch, for u'w' and v'w' component
-            scalar areaRwall_xz = gSum(magSf.boundaryField()[patchID]*Rwall_xz.boundaryField()[patchID]);
-            scalar areaRwall_yz = gSum(magSf.boundaryField()[patchID]*Rwall_yz.boundaryField()[patchID]);
-            // Calculate area weighted average of Rwall = sum(Rwall_i*area_i)/sum(area)
-            scalar Rwall_xz_avg = areaRwall_xz/area;
-            scalar Rwall_yz_avg = areaRwall_yz/area;
-            // Calculate U*
-            Ustar_.value() = pow(sqr(Rwall_xz_avg) + sqr(Rwall_yz_avg), 0.25);
-            Info << " U* is not provided and is inferred from Rwall symmTensor field as " << Ustar_.value() << " m/s" << endl;
-        }
-
-        // Obukhov length
-        // volScalarField L_ = pow(Ustar_, 3.0)/kappa_/G_buoyant;
-        // Note that g is negative itself
-        L_.value() = pow(Ustar_.value(), 3.0)*TRef_.value()/kappa_.value()/(g_.value()&qs_.value());
-        // If zetaRef not provided, infer zetaRef from U*, L, zRef and qs
-        if (zetaRef_.value() == 123456789.0)
-        {
-            zetaRef_ = zRef_/L_;
-            Info << " zetaRef is not provided and is inferred from U*, L, zRef, and qs as " << zetaRef_.value() << ", bounded to (-2, 1)" << endl;
-            // Bound zetaRef to (-2, 1) as per Van der Laan (2016)
-            zetaRef_.value() = max(-2.0, zetaRef_.value());
-            zetaRef_.value() = min(1.0, zetaRef_.value());
-        }
-    }
-    // Else if neutral stability
-    else
-    {
-        zetaRef_.value() = 0.0;
-    }
-
-    // Monin-Obukhov stability parameter
-    // volScalarField zeta_ = -kappa_*z_&&(1.0/pow(Ustar_, 3.0))&&(1.0/G_buoyant);
-
-    // Calculate TKE transport source term Sk_ and epsilon transport buoyancy source/sink coefficient C3
-    // If unstable ABL
-    if (zetaRef_.value() < 0.0)
-    {
-        scalar phiM_ = pow(1 - gamma1_.value()*zetaRef_.value(), -0.25);
-        scalar phiH_ = Prt_.value()*pow(1 - gamma2_.value()*zetaRef_.value(), -0.5);
-        scalar phiEps_ = 1.0 - zetaRef_.value();
-        scalar fst_ = (2.0 - zetaRef_.value()) + gamma1_.value()/2.0*(1.0 - 12.0*zetaRef_.value() + 7.0*sqr(zetaRef_.value())) - sqr(gamma1_.value())/16.0*zetaRef_.value()*(3.0 - 54.0*zetaRef_.value() + 35.0*sqr(zetaRef_.value()));
-        scalar feps_ = pow(phiM_, 2.5)*(1.0 - 0.75*gamma1_.value()*zetaRef_.value());
-        // Turbulence intensity at reference height
-        // volScalarField IRef_ = sqrt(2.0/3.0*k_)/URef_;
-        // scalar Ustar_ = URef_*IRef_*Cmu_*pow(phiEps_, 0.25)*pow(phiM_, 0.25);
-        // Constant for TKE transport through diffusion
-        scalar Ckappa_ = sqr(kappa_.value())/sigmak_.value()/pow(Cmu_.value(), 0.5);
-
-        // Value of Sk_, to be multiplied by Sk to form a volScalarField
-        Sk_val = pow(Ustar_.value(), 3.0)/kappa_.value()/L_.value()*(1.0/zetaRef_.value()*(phiM_ - phiEps_) - phiH_/Prt_.value()/phiM_ - Ckappa_/4.0*pow(phiM_, 6.5)*pow(phiEps_, -1.5)*fst_);
-        // Coefficient to regularize the buoyancy source/sink G_buoyant in epsilon transport
-        C3_.value() = Prt_.value()/zetaRef_.value()*phiM_/phiH_*(C1_.value()*phiM_ - C2_.value()*phiEps_ + (C2_.value() - C1_.value())*pow(phiEps_, -0.5)*feps_);
-    }
-    // Else if stable ABL
-    else if (zetaRef_.value() > 0.0)
-    {
-        scalar phiM_ = 1 + beta_.value()*zetaRef_.value();
-        scalar phiH_ = Prt_.value() + beta_.value()*zetaRef_.value();
-        scalar phiEps_ = phiM_ - zetaRef_.value();
-        scalar fst_ = (2.0 - zetaRef_.value()) - 2.0*beta_.value()*zetaRef_.value()*(1.0 - 2.0*zetaRef_.value() + 2.0*beta_.value()*zetaRef_.value());
-        scalar feps_ = pow(phiM_, -2.5)*(2.0*phiM_ - 1.0);
-        // scalar Ustar_ = URef_*IRef_*Cmu_.value()*pow(pihEps_, 0.25)*pow(phiM_, 0.25);
-        scalar Ckappa_ = sqr(kappa_.value())/sigmak_.value()/pow(Cmu_.value(), 0.5);
-
-        Sk_val = pow(Ustar_.value(), 3.0)/kappa_.value()/L_.value()*(1 - phiH_/Prt_.value()/phiM_ - Ckappa_/4.0*pow(phiM_, -3.5)*pow(phiEps_, -1.5)*fst_);
-        C3_.value() = Prt_.value()/zetaRef_.value()*phiM_/phiH_*(C1_.value()*phiM_ - C2_.value()*phiEps_ + (C2_.value() - C1_.value())*pow(phiEps_, -0.5)*feps_);
-    }
-
-    // Convert a scalar to a volScalarField for TKE transport
-    Sk_ *= Sk_val;
+    upVec_ = -g_.value()/mag(g_.value());
 
     printCoeffs();
-    Info << "Source term Sk for TKE transport is " << Sk_val << " m^2/s^3" << endl;
 }
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+void kEpsilonABL::computeMaxLengthScale()
+{
+    scalar numerator = 0.0;
+    scalar denominator = 0.0;
+    forAll(k_, i)
+    {
+        numerator += sqrt(k_[i]) * (mesh_.C()[i] & upVec_) * mesh_.V()[i];
+        denominator += sqrt(k_[i]) * mesh_.V()[i];
+    }
 
-// Reynolds stress tensor and write it to file
-// R = 2/3*k*I - nut*(u_i,j + u_j,i)
+    reduce(numerator,sumOp<scalar>());
+    reduce(denominator,sumOp<scalar>());
+
+    dimensionedScalar n("n",dimVelocity*dimLength,numerator);
+    dimensionedScalar d("d",dimVelocity,max(denominator,1.0E-10));
+
+    lmax_ = Clambda_ * (n/d);
+}
+
+// This is Reynolds stress from k-epsilon model
+// R = 2/3*k*I - nut*(u_i,j + u_j,i) = 2/3*k*I - 2nut*Sij
 // twoSymm returns twice the symmetric part of a tensor, in this case, the tensor is u_i,j, and twoSymm becomes (u_i,j + u_j,i)
 tmp<volSymmTensorField> kEpsilonABL::R() const
 {
@@ -368,24 +335,88 @@ tmp<volSymmTensorField> kEpsilonABL::R() const
 }
 
 
-// Effective stress tensor incl. laminar stresses
-// devReff = -(nu + nut)*(u_i,j + u_j,i - 2/3*u_i,i)
-tmp<volSymmTensorField> kEpsilonABL::devReff() const
+// LES and RANS blended Reynolds stress with mix_ratio
+tmp<volSymmTensorField> kEpsilonABL::Rmix() const
 {
+    // atio() parses the C-string str interpreting its content as an integral number, which is returned as a value of type int.
+    // c_str() gets C-string equivalent of word class timeName()
+    // dimensionedScalar tnow_ = atoi(runTime_.timeName().c_str());
+    // Get the current time.
+    scalar t = runTime_.value();
+    // dimensioned<scalar> tend_ = runTime_.endTime().value();
+    // Mixing ratio of LES-RANS bij, capped on request
+    if (t > mix_startTime_.value())
+    {
+        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio_cap_.value());
+    }
+    else
+    {
+        scalar mix_ratio = 0.;
+    }
+
     return tmp<volSymmTensorField>
     (
         new volSymmTensorField
         (
             IOobject
             (
-                // Why dev"Rho"Reff?
+                "Rmix",
+                runTime_.timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            (1. - mix_ratio)*((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_))
+            + mix_ratio*2.*k_*(bij_ + 1/3.*I),  // Rij_LES = 2k(1/3*I + bij)
+            k_.boundaryField().types()
+        )
+    );
+}
+
+
+// Effective stress tensor incl. laminar stresses
+// devReff = -(nu + nut)*(u_i,j + u_j,i - 2/3*u_i,i)
+// From Rij_RANS = 2/3*k*I - 2nut*Sij and Rij_LES = 2/3*k*I + 2k*bij,
+// we gather -2nut*Sij ~ 2k*bij
+// Thus we want to replace eddy-visocity assumption 2nut*Sij,
+// and term nut*(u_i,j + u_j,i) -> (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)
+// devReff = - nu*(u_i,j + u_j,i - 2/3*u_i,i)
+//           - nut(u_i,j + u_j,i) + nut*2/3*u_i,i
+//         = - nu*(u_i,j + u_j,i - 2/3*u_i,i)
+//           - ((1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)) + nut*2/3*u_i,i
+// in which nut*2/3*u_i,i should = 0 for incompressible flow due to continuity
+tmp<volSymmTensorField> kEpsilonABL::devReff() const
+{
+    // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
+    scalar t = runTime_.value();
+    // Mixing ratio of LES-RANS bij, capped on request
+    if (t > mix_startTime_.value())
+    {
+        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio_cap_.value());
+    }
+    else
+    {
+        scalar mix_ratio = 0.;
+    }
+
+    return tmp<volSymmTensorField>
+    (
+        new volSymmTensorField
+        (
+            IOobject
+            (
                 "devRhoReff",
                 runTime_.timeName(),
                 mesh_,
                 IOobject::NO_READ,
                 IOobject::NO_WRITE
             ),
-           -nuEff()*dev(twoSymm(fvc::grad(U_)))
+        //    -nuEff()*dev(twoSymm(fvc::grad(U_)))
+            - nu()*dev(twoSymm(fvc::grad(U_)))
+            - ((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U_)) + mix_ratio*(-2.*k_*bij_))
+            + nut_*2/3.*tr(fvc::grad(U_))
         )
     );
 }
@@ -396,16 +427,38 @@ tmp<volSymmTensorField> kEpsilonABL::devReff() const
 // = -div(nuEff*(u_i,j + (u_i,j).T)), -1/3*u_i,i = 0 due to continuity
 // = -div(nuEff*2Sij)
 // Laplacian of u_i results in 3x1 vector, i.e. same rank as u_i
+// For blending, separate nuEff to nu and nut,
+// and divDevReff(u_i) = -div((nu + nut)(u_i,j + (u_i,j).T))
+// = -div(nu(u_i,j + (u_i,j).T) + 2nut*Sij)
+// and like devReff(),
+// = -div(nu(u_i,j + (u_i,j).T) + (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij))
 tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
 {
+    // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
+    scalar t = runTime_.value();
+    // Mixing ratio of LES-RANS bij, capped on request
+    if (t > mix_startTime_.value())
+    {
+        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio_cap_.value());
+    }
+    else
+    {
+        scalar mix_ratio = 0.;
+    }
+
     return
     (
-      - fvm::laplacian(nuEff(), U)
-      - fvc::div(nuEff()*dev(T(fvc::grad(U))))
+    //   - fvm::laplacian(nuEff(), U)
+    //   - fvc::div(nuEff()*dev(T(fvc::grad(U))))
+        - fvc::div(nu()*twoSymm(fvc::grad(U))
+        + (1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
+        + mix_ratio*(-2.*k_*bij_))
     );
 }
 
 
+// TODO: LES-RANS bij mixing for compressible flows
 // The source term for the compressible momentum equation
 // divDevRhoReff(rho, u_i) = rho*divDevRhoReff
 // muEff = rho*(nu + nut)
@@ -413,8 +466,7 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevRhoReff
 (
     const volScalarField& rho,
     volVectorField& U
-)
-const
+) const
 {
     volScalarField muEff("muEff", rho*nuEff());
 
@@ -428,21 +480,12 @@ const
 
 bool kEpsilonABL::read()
 {
-    if (RASModelABL::read())
+    if (RASModel::read())
     {
         Cmu_.readIfPresent(coeffDict());
-        C1_.readIfPresent(coeffDict());
-        C2_.readIfPresent(coeffDict());
+        Ceps1_.readIfPresent(coeffDict());
+        Ceps2_.readIfPresent(coeffDict());
         sigmaEps_.readIfPresent(coeffDict());
-        // Read sigmak from dictionary
-        sigmak_.readIfPresent(coeffDict());
-        // The followings are MOST k-epsilon model related coefficients. Does nothing for neutral stability
-        beta_.readIfPresent(coeffDict());
-        gamma1_.readIfPresent(coeffDict());
-        gamma2_.readIfPresent(coeffDict());
-        Ustar_.readIfPresent(coeffDict());
-        zetaRef_.readIfPresent(coeffDict());
-        C3_.readIfPresent(coeffDict());
 
         return true;
     }
@@ -455,45 +498,105 @@ bool kEpsilonABL::read()
 
 void kEpsilonABL::correct()
 {
-    RASModelABL::correct();
-
-    Info << "Source term Sk for TKE transport is " << max(Sk_) << " m^2/s^3" << endl;
+    RASModel::correct();
 
     if (!turbulence_)
     {
         return;
     }
 
-    // Production term P in k and epsilon transport equation, ABL buoyancy term included
-    // Gk = 2nut*sum(Sij)^2
-    // Gb = 1/TRef*g*nut/Prt*grad(T), note that g is negative itself
-    // symm(u_i,j) returns Sij
-    // magSqr of a matrix is the Forbenius norm^2 i.e. sum(elem^2)?
-    // [LIMITATION] Prt is constant so not ideal for stable atmospheric stability
-    volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_))));
-    volScalarField G_buoyant = (1.0/TRef_)*g_&(nut_/Prt_*fvc::grad(T_));
-    // G += G_buoyant;
-    // // Richardson number proposed by Rodi
-    // volScalarField Rf = -G&&(1.0/(G + G_buoyant));
+    // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
+    scalar t = runTime_.value();
+    // Mixing ratio of LES-RANS bij, capped on request
+    if (t > mix_startTime_.value())
+    {
+        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio_cap_.value());
+    }
+    else
+    {
+        scalar mix_ratio = 0.;
+    }
 
-    // // Monin-Obukhov stability parameter
-    // volScalarField z_ = mesh.C().component(vector::Z);
-    // volScalarField zeta_ = -kappa_*z_&&(1.0/pow(Ustar_, 3.0))&&(1.0/G_buoyant);
+    Info << "Current LES-RANS bij mixing ratio is " << mix_ratio << endl;
+
+    // Update length scale
+    lm_ = pow(Cmu_,0.75)*pow(k_,1.5)/epsilon_;
+
+    // Compute maximum length scale
+    computeMaxLengthScale();
+
+    // Compute the shear production term. This is where eddy-vicosity approximation comes into play in e-epsilon model
+    // G = 2nut*Sij*Sij but also nut*Sij:grad(U),
+    // where symm(grad(U)) = 0.5(u_i,j + u_j,i) = Sij,
+    // and magSqr(Sij) is Sij*Sij
+    // Since Rij_LES = 2/3*k*I + 2k*bij and Rij_RANS = 2/3*k*I - 2nut*Sij,
+    // 2nut*Sij ~ -2k*bij
+    // So with blending, G = ((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij)):grad(U)
+    volScalarField G("kEpsilonABL:G",
+    ((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U_))
+    + mix_ratio*(-2.*k_*bij_))
+    && fvc::grad(U_));  // Double inner dot : is double dimension reduction from 3 x 3 to 1
+    // volScalarField G("kEpsilonABL:G", 2.0*nut_*magSqr(symm(fvc::grad(U_))));
+
+    forAll(G,i)
+    {
+        if (G[i] == 0.0)
+        {
+            G[i] = 1.0E-10;
+        }
+    }
+    forAll(G.boundaryField(),b)
+    {
+        forAll(G.boundaryField()[b],i)
+        {
+            if (G.boundaryField()[b][i] == 0.0)
+            {
+                G.boundaryField()[b][i] = 1.0E-10;
+            }
+        }
+    }
+
+
+    // Compute the buoyancy production term, should be 0 for neutral ABL below inversion layer
+    // TODO: this is untouched from LES data but could inject T'T' here too
+    volScalarField B("kEpsilonABL:B",(1.0/TRef_)*g_&((nut_/Prt_)*fvc::grad(T_)));
+
+    // Compute the local gradient Richardson number.
+    volScalarField Ri = -B/G;
+
+    // Compute alphaB.
+    forAll(alphaB_,i)
+    {
+        if (Ri[i] > 0.0)
+        {
+            alphaB_[i] = 1.0 - lm_[i]/lmax_.value();
+        }
+        else
+        {
+            alphaB_[i] = 1.0 - (1.0 + (Ceps2_.value() - 1.0) / (Ceps2_.value() - Ceps1_.value())) * lm_[i]/lmax_.value();
+        }
+    }
+
+    // Compute Ceps1Star.
+    Ceps1Star_ = Ceps1_ + (Ceps2_ - Ceps1_)*(lm_/lmax_);
+
+    // Compute Ceps3
+    Ceps3_ = (Ceps1_ - Ceps2_)*alphaB_ + 1.0;
 
     // Update epsilon and G at the wall
     epsilon_.boundaryField().updateCoeffs();
 
-    // Dissipation rate transport equation with buoyancy source/sink G_buoyant regularized by C3
-    // div(phi, epsilon) = nabla*(phi*epsilon), phi is velocity flux, comes from Gauss theorem
-    // Sp(a, b) is simply ab
+    // Dissipation equation
     tmp<fvScalarMatrix> epsEqn
     (
         fvm::ddt(epsilon_)
       + fvm::div(phi_, epsilon_)
       - fvm::laplacian(DepsilonEff(), epsilon_)
      ==
-        (C1_*G + C3_*G_buoyant)*epsilon_/k_
-      - fvm::Sp(C2_*epsilon_/k_, epsilon_)
+        Ceps1Star_*G*epsilon_/k_
+      + Ceps3_*B*epsilon_/k_
+      - fvm::Sp(Ceps2_*epsilon_/k_, epsilon_)
     );
 
     epsEqn().relax();
@@ -504,8 +607,7 @@ void kEpsilonABL::correct()
     bound(epsilon_, epsilonMin_);
 
 
-    // TKE transport equation with buoyancy source/sink G_buoyant and additional source Sk_
-    // Why epsilon_/k_*k_?
+    // Turbulent kinetic energy equation
     tmp<fvScalarMatrix> kEqn
     (
         fvm::ddt(k_)
@@ -513,9 +615,8 @@ void kEpsilonABL::correct()
       - fvm::laplacian(DkEff(), k_)
      ==
         G
-      + G_buoyant
+      + B
       - fvm::Sp(epsilon_/k_, k_)
-      - Sk_
     );
 
     kEqn().relax();
@@ -526,11 +627,6 @@ void kEpsilonABL::correct()
     // Re-calculate viscosity
     nut_ = Cmu_*sqr(k_)/epsilon_;
     nut_.correctBoundaryConditions();
-
-    // ABL update the turbulent thermal diffusity of T transport
-    volScalarField& kappat_ = const_cast<volScalarField&>(U().db().lookupObject<volScalarField>(kappatName_));
-    kappat_ = nut_/Prt_;
-
 }
 
 
