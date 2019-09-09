@@ -11,7 +11,7 @@
             runTime.timeName(),
             mesh,
             IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh,
         dimensionedVector("SourceU",dimVelocity/dimTime,vector::zero)
@@ -26,7 +26,7 @@
             runTime.timeName(),
             mesh,
             IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh,
         dimensionedScalar("SourceT",dimTemperature/dimTime,0.0)
@@ -46,7 +46,7 @@
     {
         momentumHeightListLength = 1;
     }
-    else 
+    else
     {
         momentumHeightListLength = SourceU.size();
     }

@@ -208,7 +208,7 @@
     );
 
     // Create the Reynolds stress field
-    Info << "Creating the Reynolds stress field, R..." << endl;
+    Info << "Creating the Reynolds stress field from k-epsilon model, R..." << endl;
     volSymmTensorField R
     (
         IOobject
@@ -219,16 +219,81 @@
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        turbulence->R()
-        // mesh,
-        // // Since NO_READ, initial values have to be provided
-        // dimensionedSymmTensor
-        // (
-        //     "zero",
-        //     Rwall.dimensions(),
-        //     symmTensor (0, 0, 0, 0, 0, 0)
-        // )
+        mesh,
+        // Since NO_READ, initial values have to be provided
+        dimensionedSymmTensor
+        (
+            "zero",
+            Rwall.dimensions(),
+            symmTensor (0, 0, 0, 0, 0, 0)
+        )
     );
+
+    // Create the LES and RANS blended Reynolds stress field
+    Info << "Creating the LES and RANS blended Reynolds stress field, Rmix..." << endl;
+    volSymmTensorField Rmix
+    (
+        IOobject
+        (
+            "Rmix",
+            runTime.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh,
+        // Since NO_READ, initial values have to be provided
+        dimensionedSymmTensor
+        (
+            "zero",
+            Rwall.dimensions(),
+            symmTensor (0, 0, 0, 0, 0, 0)
+        )
+    );
+
+    // Read the LES anisotropy tensor field from time 0
+    Info << "Reading the LES anisotropy tensor field, bij from time 0..." << endl;
+    const volSymmTensorField bij
+    (
+        IOobject
+        (
+            "bij",
+            runTime.timeName(0),  // Read from time 0 only
+            mesh,
+            IOobject::READ_IF_PRESENT,
+            IOobject::NO_WRITE
+        ),
+        mesh,
+        // If not found, it should read as 0 as below
+        dimensionedSymmTensor
+        (
+            "zero",
+            dimensionSet(0, 0, 0, 0, 0, 0, 0),  // bij is dimless
+            symmTensor (0, 0, 0, 0, 0, 0)
+        )
+    );
+
+    // // Create the LES and RANS blended anisotropy tensor field
+    // Info << "Creating the LES and RANS blended anisotropy tensor field, bij_mix..." << endl;
+    // volSymmTensorField bij_mix
+    // (
+    //     IOobject
+    //     (
+    //         "bij_mix",
+    //         runTime.timeName(),
+    //         mesh,
+    //         IOobject::NO_READ,
+    //         IOobject::AUTO_WRITE
+    //     ),
+    //     mesh,
+    //     // Since NO_READ, initial values have to be provided
+    //     dimensionedSymmTensor
+    //     (
+    //         "zero",
+    //         dimensionSet(0, 0, 0, 0, 0, 0, 0),
+    //         symmTensor (0, 0, 0, 0, 0, 0)
+    //     )
+    // );
 
     // Create the wall temperature flux field
     Info << "Reading and creating the wall temperature flux field, qwall..." << endl;

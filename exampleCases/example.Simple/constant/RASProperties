@@ -39,8 +39,8 @@ kEpsilonABLCoeffs
     Clambda          0.075;  // Max mixing length coefficient
     Ceps1            1.52;
     Ceps2            1.833;
-    sigmaK           2.95;
-    sigmaEps         2.95;
+    sigmak           $sigmak;
+    sigmaEps         $sigmaEps;
     kappa            $kappa;
 }
 

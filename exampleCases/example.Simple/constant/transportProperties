@@ -45,8 +45,13 @@ zRef            zRef [0 1 0 0 0 0 0] $windHeight;
 // von Karman constant
 kappa           kappa [0 0 0 0 0 0 0] $kappa;
 // Reference velocity magnitude
-URef            URef [0 1 1 0 0 0 0] $U0Mag;
+URef            URef [0 1 -1 0 0 0 0] $U0Mag;
 // Surface heat flux rate
 qs              qs [0 1 -1 1 0 0 0] $qwall;
+
+// Mixing ratio of LES-RANS bij related parameters
+mix_startTime   mix_startTime [0 0 1 0 0 0 0] $mix_startTime;
+mix_duration    mix_duration [0 0 1 0 0 0 0] $mix_duration;
+mix_ratio_cap   mix_ratio_cap [0 0 0 0 0 0 0] $mix_ratio_cap;
 
 // ************************************************************************* //

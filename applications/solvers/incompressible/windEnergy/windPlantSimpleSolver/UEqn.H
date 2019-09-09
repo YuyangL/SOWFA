@@ -6,7 +6,7 @@
     (
         // fvm::ddt(U)                             // time derivative
         fvm::div(phi, U)                        // convection
-      + turbulence->divDevReff(U)               // momentum flux
+      + turbulence->divDevReff(U)               // momentum flux, blending of LES-RANS bij is done in divDevReff()
       + fvc::div(Rwall)
       - fCoriolis                               // Coriolis force
       - turbines.force()                        // turbine body forces

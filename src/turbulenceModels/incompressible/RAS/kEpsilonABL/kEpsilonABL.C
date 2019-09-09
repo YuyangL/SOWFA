@@ -345,8 +345,8 @@ kEpsilonABL::kEpsilonABL
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 // Reynolds stress tensor and write it to file
-// R = 2/3*k*I - nut*(u_i,j + u_i,i)
-// twoSymm returns twice the symmetric part of a tensor, in this case, the tensor is u_i,j
+// R = 2/3*k*I - nut*(u_i,j + u_j,i)
+// twoSymm returns twice the symmetric part of a tensor, in this case, the tensor is u_i,j, and twoSymm becomes (u_i,j + u_j,i)
 tmp<volSymmTensorField> kEpsilonABL::R() const
 {
     return tmp<volSymmTensorField>
@@ -392,10 +392,10 @@ tmp<volSymmTensorField> kEpsilonABL::devReff() const
 
 
 // The source term for the incompressible momentum equation
-// divDevReff(u_i) = -(nu + nut)*div(u_i,j) - (nu + nut)*div((u_i,j - 1/3*u_i,i).T)
-// = -nuEff*div(u_i,j + (u_i,j).T), -1/3*u_i,i = 0 due to continuity
-// = -nuEff*div(2Sij)
-// Laplacian of u_i results in 3x1 matrix
+// divDevReff(u_i) = -div((nu + nut)u_i,j) - div((nu + nut)(u_i,j - 1/3*u_i,i).T)
+// = -div(nuEff*(u_i,j + (u_i,j).T)), -1/3*u_i,i = 0 due to continuity
+// = -div(nuEff*2Sij)
+// Laplacian of u_i results in 3x1 vector, i.e. same rank as u_i
 tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
 {
     return
@@ -465,9 +465,9 @@ void kEpsilonABL::correct()
     }
 
     // Production term P in k and epsilon transport equation, ABL buoyancy term included
-    // Gk = 2nut*sum(ui,j^2)
+    // Gk = 2nut*sum(Sij)^2
     // Gb = 1/TRef*g*nut/Prt*grad(T), note that g is negative itself
-    // symm(u_i) returns Sij
+    // symm(u_i,j) returns Sij
     // magSqr of a matrix is the Forbenius norm^2 i.e. sum(elem^2)?
     // [LIMITATION] Prt is constant so not ideal for stable atmospheric stability
     volScalarField G(GName(), nut_*2*magSqr(symm(fvc::grad(U_))));

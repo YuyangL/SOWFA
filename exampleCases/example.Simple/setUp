@@ -59,8 +59,12 @@ RASModel             kEpsilonABL;                // RAS model selection.
 Cmu                   0.03;                        // Turbulent eddy viscosity coefficient.
 C1                    1.21;                      // Coefficient of the production term
 C2                    1.92;
-sigmaEps              1.3;
-sigmak                1.0;          // Usually 1.0
+sigmaEps              2.95;  //1.3;
+sigmak                2.95;  //1.0;          // Usually 1.0
+// LES-RANS bij transport inputs
+mix_startTime         2000;                  // Start time for bij mixing (s)
+mix_duration          2000;                  // Duration of bij mixing (s)
+mix_ratio_cap         0.5;                   // Maximum mixing ratio of bij
 // Wall model inputs
 // nutkRoughWallFunction
 Ks		      2.5;                  // min(20z0, 0.5delta)

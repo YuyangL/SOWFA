@@ -219,15 +219,14 @@
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        turbulence->R()
-        // mesh,
-        // // Since NO_READ, initial values have to be provided
-        // dimensionedSymmTensor
-        // (
-        //     "zero",
-        //     Rwall.dimensions(),
-        //     symmTensor (0, 0, 0, 0, 0, 0)
-        // )
+        mesh,
+        // Since NO_READ, initial values have to be provided
+        dimensionedSymmTensor
+        (
+            "zero",
+            Rwall.dimensions(),
+            symmTensor (0, 0, 0, 0, 0, 0)
+        )
     );
 
     // Create the wall temperature flux field
