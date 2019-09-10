@@ -180,8 +180,8 @@ public:
         //- Return the Reynolds stress tensor
         virtual tmp<volSymmTensorField> R() const;
 
-        //- Return the LES-RANS mixed Reynolds stress tensor
-        virtual tmp<volSymmTensorField> Rmix() const;
+        // //- Return the LES-RANS mixed Reynolds stress tensor
+        // virtual tmp<volSymmTensorField> Rmix() const;
 
         //- Return the effective stress tensor including the laminar stress
         virtual tmp<volSymmTensorField> devReff() const;

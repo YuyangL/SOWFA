@@ -35,6 +35,10 @@ namespace RASModels
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
+// LES-RANS bij mixing ratio is default to 0 and cannot be smaller.
+// It'll only be overriden if current time t > mix_startTime
+scalar mix_ratio = 0.;
+
 defineTypeNameAndDebug(kEpsilonABL, 0);
 addToRunTimeSelectionTable(RASModel, kEpsilonABL, dictionary);
 
@@ -310,11 +314,50 @@ void kEpsilonABL::computeMaxLengthScale()
     lmax_ = Clambda_ * (n/d);
 }
 
-// This is Reynolds stress from k-epsilon model
-// R = 2/3*k*I - nut*(u_i,j + u_j,i) = 2/3*k*I - 2nut*Sij
-// twoSymm returns twice the symmetric part of a tensor, in this case, the tensor is u_i,j, and twoSymm becomes (u_i,j + u_j,i)
+// // This is Reynolds stress from k-epsilon model
+// // R = 2/3*k*I - nut*(u_i,j + u_j,i) = 2/3*k*I - 2nut*Sij
+// // twoSymm returns twice the symmetric part of a tensor, in this case, the tensor is u_i,j, and twoSymm becomes (u_i,j + u_j,i)
+// tmp<volSymmTensorField> kEpsilonABL::R() const
+// {
+//     return tmp<volSymmTensorField>
+//     (
+//         new volSymmTensorField
+//         (
+//             IOobject
+//             (
+//                 "R",
+//                 runTime_.timeName(),
+//                 mesh_,
+//                 IOobject::NO_READ,
+//                 IOobject::AUTO_WRITE
+//             ),
+//             ((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_)),
+//             k_.boundaryField().types()
+//         )
+//     );
+// }
+
+
+// LES and RANS blended Reynolds stress with mix_ratio
+// If I want to use a new function name I need to declare it in turbulenceModel.H which is a hassel
 tmp<volSymmTensorField> kEpsilonABL::R() const
 {
+    // atio() parses the C-string str interpreting its content as an integral number, which is returned as a value of type int.
+    // c_str() gets C-string equivalent of word class timeName()
+    // dimensionedScalar tnow_ = atoi(runTime_.timeName().c_str());
+    // Get the current time.
+    scalar t = runTime_.value();
+    // // LES-RANS bij mixing ratio is default to 0 and cannot be smaller.
+    // // It'll only be overriden if current time t > mix_startTime
+    // scalar mix_ratio = 0.;
+    // dimensioned<scalar> tend_ = runTime_.endTime().value();
+    // Mixing ratio of LES-RANS bij, capped on request
+    if (t > mix_startTime_.value())
+    {
+        mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio_cap_.value());
+    }
+
     return tmp<volSymmTensorField>
     (
         new volSymmTensorField
@@ -322,45 +365,6 @@ tmp<volSymmTensorField> kEpsilonABL::R() const
             IOobject
             (
                 "R",
-                runTime_.timeName(),
-                mesh_,
-                IOobject::NO_READ,
-                IOobject::AUTO_WRITE
-            ),
-            ((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_)),
-            k_.boundaryField().types()
-        )
-    );
-}
-
-
-// LES and RANS blended Reynolds stress with mix_ratio
-tmp<volSymmTensorField> kEpsilonABL::Rmix() const
-{
-    // atio() parses the C-string str interpreting its content as an integral number, which is returned as a value of type int.
-    // c_str() gets C-string equivalent of word class timeName()
-    // dimensionedScalar tnow_ = atoi(runTime_.timeName().c_str());
-    // Get the current time.
-    scalar t = runTime_.value();
-    // dimensioned<scalar> tend_ = runTime_.endTime().value();
-    // Mixing ratio of LES-RANS bij, capped on request
-    if (t > mix_startTime_.value())
-    {
-        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
-        mix_ratio_cap_.value());
-    }
-    else
-    {
-        scalar mix_ratio = 0.;
-    }
-
-    return tmp<volSymmTensorField>
-    (
-        new volSymmTensorField
-        (
-            IOobject
-            (
-                "Rmix",
                 runTime_.timeName(),
                 mesh_,
                 IOobject::NO_READ,
@@ -380,24 +384,21 @@ tmp<volSymmTensorField> kEpsilonABL::Rmix() const
 // we gather -2nut*Sij ~ 2k*bij
 // Thus we want to replace eddy-visocity assumption 2nut*Sij,
 // and term nut*(u_i,j + u_j,i) -> (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)
-// devReff = - nu*(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
+// devReff = -nu(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
 //           - nut(u_i,j + u_j,i) + nut*2/3*u_i,i*delta_ij
-//         = - nu*(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
+//         = -nu(u_i,j + u_j,i - 2/3*u_i,i*delta_ij)
 //           - ((1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij)) + nut*2/3*u_i,i*delta_ij
-// in which nut*2/3*u_i,i should = 0 for incompressible flow due to continuity
+// in which nut*2/3*u_i,i should = 0 for incompressible flow due to continuity but we keep it for stability
 tmp<volSymmTensorField> kEpsilonABL::devReff() const
 {
     // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
     scalar t = runTime_.value();
+    scalar mix_ratio = 0.;
     // Mixing ratio of LES-RANS bij, capped on request
     if (t > mix_startTime_.value())
     {
-        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
         mix_ratio_cap_.value());
-    }
-    else
-    {
-        scalar mix_ratio = 0.;
     }
 
     return tmp<volSymmTensorField>
@@ -423,30 +424,29 @@ tmp<volSymmTensorField> kEpsilonABL::devReff() const
 
 // The source term for the incompressible momentum equation
 // divDevReff(u_i) = -div((nu + nut)u_i,j) - div((nu + nut)(u_j,i - (1/3*u_j,j)*delta_ji))
-// = -div(nuEff*(u_i,j + u_j,i)), -1/3*u_j,j = 0 due to continuity
-// = -div(nuEff*2Sij)
+//                 = -div(nu*u_i,j + nu*u_j,i - nu*1/3*u_j,j*delta_ji) ...[1]
+//                   - div(nut*u_i,j + nut*u_j,i - nut*1/3*u_j,j*delta_ji) ...[2]
+// We leave [1] as it is and incl. blending of LES-RANS bij to [2].
+// [2] = -div(2nut*Sij) ...[3]
+//       + div(nut*1/3*u_j,j*delta_ji) ...[4]
+// We leave [4] as it is and replace 2nut*Sij in [3] with blended bij, recall 2nut*Sij ~ -2k*bij
+// [3] = -div((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij)) ...[3.1]
+// Summing up, divDevReff(u_i) = [1] + [3.1] + [4]
+//                             = -div(nu*u_i,j + nu*u_j,i - nu*1/3*u_j,j*delta_ji)
+//                               - div((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij))
+//                               + div(nut*1/3*u_j,j*delta_ji)
 // Laplacian of u_i results in 3x1 vector, i.e. same rank as u_i
-// For blending, separate nuEff to nu and nut,
-// and divDevReff(u_i) = -div((nu + nut)(u_i,j + u_j,i))
-// = -div(2nu*Sij + 2nut*Sij)
-// and like devReff(),
-// = -div(2nu*Sij + (1 - mix_ratio)*2nut*Sij + mix_ratio(-2k*bij))
-// And for stabilty that u_j,j is never actually 0, we expand 2nu*Sij back to
-// -div(2nu*Sij) = -div(nu(u_i,j + u_j,i - 1/3*u_j,j*delta_ij))
-//               = -div(nu(u_i,j)) - div(nu*(u_j,i - 1/3*u_j,j*delta_ji)))
+// Note that ideally, due to continuity, u_j,j = 0. But for stability (u_j,j is never actually 0 in simulations), it's kept
 tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
 {
     // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
     scalar t = runTime_.value();
+    // scalar mix_ratio = 0.;
     // Mixing ratio of LES-RANS bij, capped on request
     if (t > mix_startTime_.value())
     {
-        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
         mix_ratio_cap_.value());
-    }
-    else
-    {
-        scalar mix_ratio = 0.;
     }
 
     return
@@ -454,9 +454,10 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
     //   - fvm::laplacian(nuEff(), U)
     //   - fvc::div(nuEff()*dev(T(fvc::grad(U))))
         - fvm::laplacian(nu(), U)
-        - fvc::div(nu()*dev(T(fvc::grad(U))))
+        - fvc::div(nu()*dev(T(fvc::grad(U))))  // ...[1]
         - fvc::div((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
-        + mix_ratio*(-2.*k_*bij_))  // bij mixing to nu_t
+        + mix_ratio*(-2.*k_*bij_))  // ...[3.1]
+        + fvc::div(nut_/3.*tr(T(fvc::grad(U)))*I)  // ...[4]
     );
 }
 
@@ -510,15 +511,12 @@ void kEpsilonABL::correct()
 
     // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
     scalar t = runTime_.value();
+    // scalar mix_ratio = 0.;
     // Mixing ratio of LES-RANS bij, capped on request
     if (t > mix_startTime_.value())
     {
-        scalar mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
+        mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
         mix_ratio_cap_.value());
-    }
-    else
-    {
-        scalar mix_ratio = 0.;
     }
 
     Info << "Current LES-RANS bij mixing ratio is " << mix_ratio << endl;
@@ -530,7 +528,7 @@ void kEpsilonABL::correct()
     computeMaxLengthScale();
 
     // Compute the shear production term. This is where eddy-vicosity approximation comes into play in e-epsilon model
-    // G = 2nut*Sij*Sij but also nut*Sij:grad(U),
+    // G = 2nut*Sij*Sij but also 2nut*Sij:grad(U),
     // where symm(grad(U)) = 0.5(u_i,j + u_j,i) = Sij,
     // and magSqr(Sij) is Sij*Sij
     // Since Rij_LES = 2/3*k*I + 2k*bij and Rij_RANS = 2/3*k*I - 2nut*Sij,

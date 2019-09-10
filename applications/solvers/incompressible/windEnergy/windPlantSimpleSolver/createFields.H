@@ -55,67 +55,8 @@
     Info << "Reading the atmospheric boundary layer properties..." << endl;
     #include "readABLProperties.H"
 
-    // Create and read the wall shear stress field
-    Info << "Reading and creating the wall shear stress field, Rwall..." << endl;
-    volSymmTensorField Rwall
-    (
-        IOobject
-        (
-            "Rwall",
-            runTime.timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    );
-
-    // Create the Reynolds stress field
-    Info << "Creating the Reynolds stress field from k-epsilon model, R..." << endl;
-    volSymmTensorField R
-    (
-        IOobject
-        (
-            "R",
-            runTime.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh,
-        // Since NO_READ, initial values have to be provided
-        dimensionedSymmTensor
-        (
-            "R",
-            Rwall.dimensions(),
-            symmTensor (0, 0, 0, 0, 0, 0)
-        )
-    );
-
-    // Create the LES and RANS blended Reynolds stress field
-    Info << "Creating the LES and RANS blended Reynolds stress field, Rmix..." << endl;
-    volSymmTensorField Rmix
-    (
-        IOobject
-        (
-            "Rmix",
-            runTime.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh,
-        // Since NO_READ, initial values have to be provided
-        dimensionedSymmTensor
-        (
-            "Rmix",
-            Rwall.dimensions(),
-            symmTensor (0, 0, 0, 0, 0, 0)
-        )
-    );
-
     // Read the LES anisotropy tensor field from time 0
-    Info << "Reading or creating the LES anisotropy tensor field, bij from time 0..." << endl;
+    Info << "Reading the LES anisotropy tensor field, bij from time 0..." << endl;
     const volSymmTensorField bij
     (
         IOobject
@@ -137,7 +78,7 @@
     );
 
     // // Create the LES and RANS blended anisotropy tensor field
-    // Info << "Creating the LES and RANS blended anisotropy tensor field, bij_mix..." << endl;
+    // Info << "Reading the LES and RANS blended anisotropy tensor field, bij_mix..." << endl;
     // volSymmTensorField bij_mix
     // (
     //     IOobject
@@ -164,6 +105,65 @@
     (
         incompressible::turbulenceModel::New(U, phi, laminarTransport)
     );
+
+    // Create and read the wall shear stress field
+    Info << "Reading the wall shear stress field, Rwall..." << endl;
+    volSymmTensorField Rwall
+    (
+        IOobject
+        (
+            "Rwall",
+            runTime.timeName(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh
+    );
+
+    // Create the Reynolds stress field
+    Info << "Creating the Reynolds stress field R..." << endl;
+    volSymmTensorField R
+    (
+        IOobject
+        (
+            "R",
+            runTime.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        turbulence->R()
+        // // Since NO_READ, initial values have to be provided
+        // dimensionedSymmTensor
+        // (
+        //     "R",
+        //     Rwall.dimensions(),
+        //     symmTensor (0, 0, 0, 0, 0, 0)
+        // )
+    );
+
+    // // Create the LES and RANS blended Reynolds stress field
+    // Info << "Creating the LES and RANS blended Reynolds stress field, Rmix..." << endl;
+    // volSymmTensorField Rmix
+    // (
+    //     IOobject
+    //     (
+    //         "Rmix",
+    //         runTime.timeName(),
+    //         mesh,
+    //         IOobject::NO_READ,
+    //         IOobject::AUTO_WRITE
+    //     ),
+    //     turbulence->Rmix()
+    //     // // Since NO_READ, initial values have to be provided
+    //     // dimensionedSymmTensor
+    //     // (
+    //     //     "Rmix",
+    //     //     Rwall.dimensions(),
+    //     //     symmTensor (0, 0, 0, 0, 0, 0)
+    //     // )
+    // );
 
 /*
     // These fields are created in kEpsilonABL.C?
