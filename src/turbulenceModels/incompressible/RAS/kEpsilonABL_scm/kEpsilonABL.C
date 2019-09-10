@@ -280,7 +280,16 @@ kEpsilonABL::kEpsilonABL
     bij_(U.db().lookupObject<volSymmTensorField>("bij")),
     mix_startTime_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_startTime", 2000)),
     mix_duration_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_duration", 2000)),
-    mix_ratio_cap_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_ratio_cap", 0.5))
+    mix_ratio_cap_(transportDict_.lookupOrDefault<dimensionedScalar>("mix_ratio_cap", 0.5)),
+    mix_verbose_
+    (
+        dimensioned<scalar>::lookupOrAddToDict
+        (
+            "mix_verbose",
+            coeffDict_,
+            1
+        )
+    )
 {
     bound(k_, kMin_);
     bound(epsilon_, epsilonMin_);
@@ -291,6 +300,13 @@ kEpsilonABL::kEpsilonABL
     upVec_ = -g_.value()/mag(g_.value());
 
     printCoeffs();
+
+    if (mix_verbose_.value() > 1)
+    {
+        Info << "LES/ML-RANS bij mixing start time: " << mix_startTime_ << " s" << endl;
+        Info << "LES/ML-RANS bij mixing duration: " << mix_duration_ << " s" << endl;
+        Info << "LES/ML-RANS bij mix ratio cap: " << mix_ratio_cap_ << endl;
+    }
 }
 
 
@@ -393,7 +409,7 @@ tmp<volSymmTensorField> kEpsilonABL::devReff() const
 {
     // dimensioned<scalar> tnow_ = atoi(runTime_.timeName().c_str());
     scalar t = runTime_.value();
-    scalar mix_ratio = 0.;
+    // scalar mix_ratio = 0.;
     // Mixing ratio of LES-RANS bij, capped on request
     if (t > mix_startTime_.value())
     {
@@ -423,18 +439,28 @@ tmp<volSymmTensorField> kEpsilonABL::devReff() const
 
 
 // The source term for the incompressible momentum equation
-// divDevReff(u_i) = -div((nu + nut)u_i,j) - div((nu + nut)(u_j,i - (1/3*u_j,j)*delta_ji))
-//                 = -div(nu*u_i,j + nu*u_j,i - nu*1/3*u_j,j*delta_ji) ...[1]
-//                   - div(nut*u_i,j + nut*u_j,i - nut*1/3*u_j,j*delta_ji) ...[2]
+// divDevReff(u_i) = -div((nu + nut)u_i,j) - div((nu + nut)(u_j,i - (u_j,j/3)*delta_ji))
+//                 = -div(nu*u_i,j + nu*u_j,i - nu/3*u_j,j*delta_ji) ...[1]
+//                   - div(nut*u_i,j + nut*u_j,i - nut/3*u_j,j*delta_ji) ...[2]
 // We leave [1] as it is and incl. blending of LES-RANS bij to [2].
 // [2] = -div(2nut*Sij) ...[3]
-//       + div(nut*1/3*u_j,j*delta_ji) ...[4]
+//       + div(nut/3*u_j,j*delta_ji) ...[4]
 // We leave [4] as it is and replace 2nut*Sij in [3] with blended bij, recall 2nut*Sij ~ -2k*bij
-// [3] = -div((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij)) ...[3.1]
-// Summing up, divDevReff(u_i) = [1] + [3.1] + [4]
-//                             = -div(nu*u_i,j + nu*u_j,i - nu*1/3*u_j,j*delta_ji)
-//                               - div((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij))
-//                               + div(nut*1/3*u_j,j*delta_ji)
+// [3] = -div((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij)) ...[5]
+// Summing up, divDevReff(u_i) = [1] + [5] + [4]
+//                             = -div(nu*u_i,j + nu*u_j,i - nu/3*u_j,j*delta_ji) ...[1]
+//                               - div((1 - mix_ratio)*2nut*Sij)) ...[6]
+//                               - div(mix_ratio*(-2k*bij)) ...[7]
+//                               + div(nut/3*u_j,j*delta_ji) ...[4]
+// Additionally, we're going to make [6] partially implicit, i.e. fvm again as it used to be:
+// [6] = -div((1 - mix_ratio)*2nut*u_i,j) ...[8], fvm treatment
+//       - div((1 - mix_ratio)*2nut*u_j,i) ...[9]
+// Finally, divDevReff(u_i) = [1] + [8] + [9] + [7] + [4]
+//                          = -div(nu*u_i,j + nu*u_j,i - nu*1/3*u_j,j*delta_ji)
+//                            - div((1 - mix_ratio)*2nut*u_i,j)
+//                            - div((1 - mix_ratio)*2nut*u_j,i)
+//                            - div(mix_ratio*(-2k*bij))
+//                            + div(nut/3*u_j,j*delta_ji)
 // Laplacian of u_i results in 3x1 vector, i.e. same rank as u_i
 // Note that ideally, due to continuity, u_j,j = 0. But for stability (u_j,j is never actually 0 in simulations), it's kept
 tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
@@ -453,10 +479,13 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
     (
     //   - fvm::laplacian(nuEff(), U)
     //   - fvc::div(nuEff()*dev(T(fvc::grad(U))))
-        - fvm::laplacian(nu(), U)
+        - fvm::laplacian(nu(), U)  // ...[1]
         - fvc::div(nu()*dev(T(fvc::grad(U))))  // ...[1]
-        - fvc::div((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
-        + mix_ratio*(-2.*k_*bij_))  // ...[3.1]
+        - fvm::laplacian((1. - mix_ratio)*2.*nut_, U)  // ...[8]
+        - fvc::div((1. - mix_ratio)*2.*nut_*T(fvc::grad(U)))  // ...[9]
+        // - fvc::div((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
+        // + mix_ratio*(-2.*k_*bij_))
+        - fvc::div(mix_ratio*(-2.*k_*bij_))  // ...[7]
         + fvc::div(nut_/3.*tr(T(fvc::grad(U)))*I)  // ...[4]
     );
 }
@@ -519,7 +548,21 @@ void kEpsilonABL::correct()
         mix_ratio_cap_.value());
     }
 
-    Info << "Current LES-RANS bij mixing ratio is " << mix_ratio << endl;
+    if (mix_verbose_.value() > 0)
+    {
+        Info << "Current LES/ML-RANS bij mixing ratio is " << mix_ratio << endl;
+
+        if (mix_verbose_.value() > 1)
+        {
+            // cmptMin()/cmptMax() takes min/max of all componets in tensor or vector, for each cell
+            // Then min()/max() takes min/max of a scalar field
+            scalar bij_min = min(cmptMin(bij_));
+            scalar bij_max = max(cmptMax(bij_));
+            reduce(bij_min, minOp<scalar>());
+            reduce(bij_max, maxOp<scalar>());
+            Info << "Min LES/ML bij is " << bij_min << "; max is " << bij_max << endl;
+        }
+    }
 
     // Update length scale
     lm_ = pow(Cmu_,0.75)*pow(k_,1.5)/epsilon_;
@@ -528,9 +571,9 @@ void kEpsilonABL::correct()
     computeMaxLengthScale();
 
     // Compute the shear production term. This is where eddy-vicosity approximation comes into play in e-epsilon model
-    // G = 2nut*Sij*Sij but also 2nut*Sij:grad(U),
+    // G = 2nut*Sij:Sij but also 2nut*Sij:grad(U),
     // where symm(grad(U)) = 0.5(u_i,j + u_j,i) = Sij,
-    // and magSqr(Sij) is Sij*Sij
+    // and magSqr(Sij) is Sij:Sij
     // Since Rij_LES = 2/3*k*I + 2k*bij and Rij_RANS = 2/3*k*I - 2nut*Sij,
     // 2nut*Sij ~ -2k*bij
     // So with blending, G = ((1 - mix_ratio)*2nut*Sij + mix_ratio*(-2k*bij)):grad(U)
@@ -538,7 +581,23 @@ void kEpsilonABL::correct()
     ((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U_))
     + mix_ratio*(-2.*k_*bij_))
     && fvc::grad(U_));  // Double inner dot : is double dimension reduction from 3 x 3 to 1
-    // volScalarField G("kEpsilonABL:G", 2.0*nut_*magSqr(symm(fvc::grad(U_))));
+    if (mix_verbose_.value() > 1)
+    {
+        // volScalarField G("kEpsilonABL:G", 2.0*nut_*magSqr(symm(fvc::grad(U_))));
+        volScalarField G_old = 2.0*nut_*magSqr(symm(fvc::grad(U_)));
+        scalar g_min = min(G).value();
+        scalar g_max = max(G).value();
+        reduce(g_min, minOp<scalar>());
+        reduce(g_max, maxOp<scalar>());
+        scalar g_avg = G.weightedAverage(mesh_.V()).value();
+        Info << "Min G is " << g_min << "; max is " << g_max << "; wighted mean is " << g_avg << endl;
+        scalar g_old_min = min(G_old).value();
+        scalar g_old_max = max(G_old).value();
+        reduce(g_old_min, minOp<scalar>());
+        reduce(g_old_max, maxOp<scalar>());
+        scalar g_old_avg = G_old.weightedAverage(mesh_.V()).value();
+        Info << "Min original G is " << g_old_min << "; max is " << g_old_max << "; wighted mean is " << g_old_avg << endl;
+    }
 
     forAll(G,i)
     {
@@ -557,7 +616,6 @@ void kEpsilonABL::correct()
             }
         }
     }
-
 
     // Compute the buoyancy production term, should be 0 for neutral ABL below inversion layer
     // TODO: this is untouched from LES data but could inject T'T' here too

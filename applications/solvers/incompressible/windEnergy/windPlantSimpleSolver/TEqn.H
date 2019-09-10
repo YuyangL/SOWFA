@@ -6,8 +6,8 @@
 
     fvScalarMatrix TEqn
     (
-        fvm::ddt(T)
-      + fvm::div(phi, T)
+        // fvm::ddt(T)
+      fvm::div(phi, T)
       - fvm::laplacian(kappaEff, T)
       - fvc::div(qwall)
       - SourceT

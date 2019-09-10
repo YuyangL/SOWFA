@@ -112,6 +112,7 @@ protected:
             dimensionedScalar mix_startTime_;
             dimensionedScalar mix_duration_;
             dimensionedScalar mix_ratio_cap_;
+            dimensionedScalar mix_verbose_;
 
 
 public:
