@@ -223,7 +223,7 @@
         // Since NO_READ, initial values have to be provided
         dimensionedSymmTensor
         (
-            "zero",
+            "R",
             Rwall.dimensions(),
             symmTensor (0, 0, 0, 0, 0, 0)
         )

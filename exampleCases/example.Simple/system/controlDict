@@ -58,6 +58,16 @@ FoamFile
      // #include "calcFvcGrad"
     #include "sampling/sliceDataInstantaneous_OneTurb"
     #include "sampling/probesData_OneTurb"
+
+    /*
+    // Doesn't work
+    R
+    {
+      type             turbulenceFields;
+      libs             ("libfieldFunctionObjects.so");
+      field            R;
+    }
+    */
   }
 
 // ************************************************************************* //

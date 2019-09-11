@@ -10,7 +10,7 @@
             IOobject::MUST_READ,
             IOobject::AUTO_WRITE
         ),
-        mesh
+        mesh  // This makes GeometricField look in my time dir
     );
 
     // Create and read the modified pressure field
@@ -122,6 +122,7 @@
     );
 
     // Create the Reynolds stress field
+    // This is simply pre-allocating memory for this field
     Info << "Creating the Reynolds stress field R..." << endl;
     volSymmTensorField R
     (

@@ -384,11 +384,12 @@ tmp<volSymmTensorField> kEpsilonABL::R() const
                 runTime_.timeName(),
                 mesh_,
                 IOobject::NO_READ,
-                IOobject::AUTO_WRITE
+                IOobject::NO_WRITE  // AUTO_WRITE doesn't work here as R is tmp?
             ),
             (1. - mix_ratio)*((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_))
             + mix_ratio*2.*k_*(bij_ + 1/3.*I),  // Rij_LES = 2k(1/3*I + bij)
-            k_.boundaryField().types()
+            bij_.boundaryField().types()  // Boundary type of R is set to same as bij which are all "calculated"
+            // k_.boundaryField().types()
         )
     );
 }

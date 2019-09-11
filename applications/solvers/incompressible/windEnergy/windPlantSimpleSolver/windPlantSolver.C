@@ -172,6 +172,13 @@ int main(int argc, char *argv[])
 //      #include "statisticsFace.H"
 //      #include "statisticsABL.H"
 
+        // Gonna output Reynolds stress R here now that R has been initialized in createFields.H
+        if (runTime.outputTime())
+        {
+            R = turbulence->R();
+            R.write();
+        }
+
         runTime.write();
 //      #include "writeGradP.H"
 
