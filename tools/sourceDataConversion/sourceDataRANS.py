@@ -203,7 +203,7 @@ def readSourceHistoryFile(inputFile):
   return heights, time, source
 
 
-def selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, startTimes = (None, None, None, None), stopTimes = (None, None, None, None)):
+def selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, startTimes=(None, None, None, None), stopTimes=(None, None, None, None)):
     import numpy as np
     # Gather sources by momentum in x, y, z, and temperature
     timesAll = (timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature)
@@ -230,7 +230,7 @@ def selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, st
 
 def calculateAverage(heightMomentum, heightTemperature,
  timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature,
- sourceMomentumX, sourceMomentumY, sourceMomentumZ, sourceTemperature, startTimes = (None, None, None, None), stopTimes = (None, None, None, None)):
+ sourceMomentumX, sourceMomentumY, sourceMomentumZ, sourceTemperature, startTimes=(None, None, None, None), stopTimes=(None, None, None, None)):
     import numpy as np
     # Get selected times with given startTimes and stopTimes
     timesSelected, startTimesReal, stopTimesReal, iStart, iStop = selectTimes(timeMomentumX, timeMomentumY, timeMomentumZ, timeTemperature, startTimes, stopTimes)
@@ -264,8 +264,8 @@ def calculateAverage(heightMomentum, heightTemperature,
     sourceMomentumX_mean, sourceMomentumY_mean, sourceMomentumZ_mean = np.empty_like(heightMomentum), np.empty_like(heightMomentum), np.empty_like(heightMomentum)
     sourceTemperature_mean = np.empty_like(heightTemperature)
     for i in range(len(heightMomentum)):
-        sourceMomentumX_mean, sourceMomentumY_mean, sourceMomentumZ_mean = sourceTimeMomentumX/np.sum(timeMomentumX_selected), sourceTimeMomentumY/np.sum(timeMomentumY_selected), sourceTimeMomentumZ/np.sum(timeMomentumZ_selected)
-        sourceTemperature_mean = sourceTimeTemperature/np.sum(timeTemperature_selected)
+        sourceMomentumX_mean[i], sourceMomentumY_mean[i], sourceMomentumZ_mean[i] = sourceTimeMomentumX[i]/np.sum(timeMomentumX_selected), sourceTimeMomentumY[i]/np.sum(timeMomentumY_selected), sourceTimeMomentumZ[i]/np.sum(timeMomentumZ_selected)
+        sourceTemperature_mean[i] = sourceTimeTemperature[i]/np.sum(timeTemperature_selected)
 
     return sourceMomentumX_mean, sourceMomentumY_mean, sourceMomentumZ_mean, sourceTemperature_mean, startTimesReal, stopTimesReal
 
@@ -290,7 +290,7 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightMomentum)):
-            textStr = textStr + ' ' + str(sourceMomentumX_mean[i][0])
+            textStr = textStr + ' ' + str(sourceMomentumX_mean[i])
 
         textStr = textStr + ')\n'
         fid.write(textStr)
@@ -302,7 +302,7 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightMomentum)):
-            textStr = textStr + ' ' + str(sourceMomentumY_mean[i][0])
+            textStr = textStr + ' ' + str(sourceMomentumY_mean[i])
 
         textStr = textStr + ')\n'
         fid.write(textStr)
@@ -314,7 +314,7 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightMomentum)):
-            textStr = textStr + ' ' + str(sourceMomentumZ_mean[i][0])
+            textStr = textStr + ' ' + str(sourceMomentumZ_mean[i])
 
         textStr = textStr + ')\n'
         fid.write(textStr)
@@ -333,7 +333,7 @@ def writeMeanSourceForInput(fileName, heightMomentum,heightTemperature, sourceMo
     for n in range(len(timesNew)):
         textStr = '    (' + str(timesNew[n])
         for i in range(len(heightTemperature)):
-            textStr = textStr + ' ' + str(sourceTemperature_mean[n][i])
+            textStr = textStr + ' ' + str(sourceTemperature_mean[i])
 
         textStr = textStr + ')\n'
         fid.write(textStr)
