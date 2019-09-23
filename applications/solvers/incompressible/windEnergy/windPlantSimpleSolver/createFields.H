@@ -123,12 +123,12 @@
 
     // Create the Reynolds stress field
     // This is simply pre-allocating memory for this field
-    Info << "Creating the Reynolds stress field R..." << endl;
-    volSymmTensorField R
+    Info << "Creating the Reynolds stress field Rij..." << endl;
+    volSymmTensorField Rij
     (
         IOobject
         (
-            "R",
+            "Rij",
             runTime.timeName(),
             mesh,
             IOobject::NO_READ,

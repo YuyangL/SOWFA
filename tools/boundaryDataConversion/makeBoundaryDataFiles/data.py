@@ -1,4 +1,4 @@
-#!/nopt/nrel/apps/python/2.7.6-gcc-4.8.2/bin/python
+#!/usr/bin/env python
 
 # This script reads in the data files created by OpenFOAM's sample patch
 # function object and creates an updated file that works with the
@@ -11,7 +11,7 @@
 
 # User input
 import sys
-print 'sys = ',sys.argv
+print('sys = ',sys.argv)
 
 oldFile = sys.argv[1]
 newFile = sys.argv[2]
@@ -26,7 +26,7 @@ fid = open(oldFile,'r')
 nDataOld = '\n'
 while nDataOld == '\n':
     nDataOld = fid.readline()
-    
+
 nDataOld = int(nDataOld)
 
 # Read in data as text.
@@ -34,7 +34,7 @@ dataOld = []
 fid.readline()
 for i in range(nDataOld):
     dataOld.append(fid.readline())
-    
+
 # Close the data file.
 fid.close()
 
@@ -53,7 +53,7 @@ fid = open(indexFile,'r')
 nDataNew = '\n'
 while nDataNew == '\n':
     nDataNew = fid.readline()
-    
+
 nDataNew = int(nDataNew)
 
 # Read in indices
@@ -61,7 +61,7 @@ indicesNew = []
 fid.readline()
 for i in range(nDataNew):
     indicesNew.append(int(fid.readline()))
-    
+
 # Close the index file
 fid.close()
 
@@ -82,10 +82,10 @@ elif dataSize == 9:
     dataType = 'tensor'
     average  = '(0 0 0 0 0 0 0 0 0)'
 else:
-    print 'Error: Unknown data type\n'
-    print 'Need scalar, vector, symmTensor, or tensor'
+    print('Error: Unknown data type\n')
+    print('Need scalar, vector, symmTensor, or tensor')
 
-  
+
 
 # Write the file header.
 fid.write('/*--------------------------------*- C++ -*----------------------------------*\\\n')
@@ -114,11 +114,11 @@ fid.write('\n')
 fid.write('(\n')
 for i in range(nDataNew):
     fid.write(dataOld[indicesNew[i]])
-    
+
 fid.write(')')
 fid.close()
 
 # Print information to the screen.
-print '\n'
-print 'Number of data entries (original) = ', nDataOld
-print 'Number of data entries (new) = ', nDataNew
+print('\n')
+print('Number of data entries (original) = ', nDataOld)
+print('Number of data entries (new) = ', nDataNew)

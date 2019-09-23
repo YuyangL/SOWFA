@@ -40,9 +40,9 @@ divSchemes
     div((nuEff*dev(grad(U).T())))  Gauss linear;
     div(B)                         Gauss linear;
     div(phi,B)                     bounded Gauss linear;
-    div(phi,k)                     bounded Gauss linear;
+    div(phi,k)                     bounded Gauss upwind;
     // Bounded non-linear term
-    div(phi,epsilon)               bounded Gauss linear;
+    div(phi,epsilon)               bounded Gauss upwind;  // upwind interpolation for better convergence
 }
 
 laplacianSchemes

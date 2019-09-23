@@ -374,6 +374,15 @@ tmp<volSymmTensorField> kEpsilonABL::R() const
         mix_ratio_cap_.value());
     }
 
+    if (mix_verbose_.value() > 1)
+    {
+        scalar bij_min = min(cmptMin(bij_));
+        scalar bij_max = max(cmptMax(bij_));
+        reduce(bij_min, minOp<scalar>());
+        reduce(bij_max, maxOp<scalar>());
+        Info << "Min LES/ML bij when writing Rij is " << bij_min << "; max is " << bij_max << endl;
+    }
+
     return tmp<volSymmTensorField>
     (
         new volSymmTensorField
@@ -386,7 +395,7 @@ tmp<volSymmTensorField> kEpsilonABL::R() const
                 IOobject::NO_READ,
                 IOobject::NO_WRITE  // AUTO_WRITE doesn't work here as R is tmp?
             ),
-            (1. - mix_ratio)*((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_))
+            (1. - mix_ratio)*(((2.0/3.0)*I)*k_ - nut_*twoSymm(fvc::grad(U_)))
             + mix_ratio*2.*k_*(bij_ + 1/3.*I),  // Rij_LES = 2k(1/3*I + bij)
             bij_.boundaryField().types()  // Boundary type of R is set to same as bij which are all "calculated"
             // k_.boundaryField().types()
@@ -474,6 +483,15 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
     {
         mix_ratio = min((t - mix_startTime_.value())*mix_ratio_cap_.value()/mix_duration_.value(),
         mix_ratio_cap_.value());
+    }
+
+    if (mix_verbose_.value() > 1)
+    {
+        scalar nu_min = min(nu());
+        scalar nu_max = max(nu());
+        reduce(bij_min, minOp<scalar>());
+        reduce(bij_max, maxOp<scalar>());
+        Info << "Min LES/ML bij is " << bij_min << "; max is " << bij_max << endl;
     }
 
     return

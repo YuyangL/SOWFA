@@ -1,7 +1,7 @@
-#!/nopt/nrel/apps/python/2.7.6-gcc-4.8.2/bin/python
+#!/usr/bin/env python
 
-# This script reads in the points and faces files created by OpenFOAM's sample 
-# patch function object and creates a points file needed by the 
+# This script reads in the points and faces files created by OpenFOAM's sample
+# patch function object and creates a points file needed by the
 # timeVaryingFixedMapped boundary condition
 #
 # Usage:  ./points.py [verticesFileName] [facesFileName] [newCentroidsFileName] [newIndicesFileName] [xMin xMax yMin yMax zMin zMax] [planeType(xy,xz,yz)]
@@ -12,7 +12,7 @@
 
 # User input
 import sys
-print 'sys = ',sys.argv
+print('sys = ',sys.argv)
 
 vertexFile = sys.argv[1]
 faceFile = sys.argv[2]
@@ -41,8 +41,8 @@ elif planeType == 'yz':
 #   sortOrder = [0,2,1]
     sortOrder = [2,1]
 else:
-    print 'Invalid specification of planeType:'
-    print 'Need xy, xz, or yz.'
+    print('Invalid specification of planeType:')
+    print('Need xy, xz, or yz.')
 
 
 
@@ -54,7 +54,7 @@ fid = open(vertexFile,'r')
 nVertices = '\n'
 while nVertices == '\n':
     nVertices = fid.readline()
-    
+
 nVertices = int(nVertices)
 
 # Read in vertices.
@@ -121,15 +121,15 @@ fid.close()
 j = 0
 dataCentroidNew = []
 for i in range(nFaces):
-    if (dataCentroid[i][0] >= xMin and dataCentroid[i][0] <= xMax and 
-        dataCentroid[i][1] >= yMin and dataCentroid[i][1] <= yMax and 
+    if (dataCentroid[i][0] >= xMin and dataCentroid[i][0] <= xMax and
+        dataCentroid[i][1] >= yMin and dataCentroid[i][1] <= yMax and
         dataCentroid[i][2] >= zMin and dataCentroid[i][2] <= zMax):
         dataCentroidNew.append(dataCentroid[i])
         j = j+1
 
 
 nFaces = j
-       
+
 # Then, sort according to direction heirarchy.
 #dataCentroidNew.sort(key=lambda k: (k[sortOrder[0]],
 #                                    k[sortOrder[1]],
@@ -185,17 +185,17 @@ fid.close()
 
 
 #Print out information to the screen.
-print '\n'
-print 'Number of vertices = ', nVertices
-print 'Number of faces (original) = ', nFaces
-print '\n'
-print 'x_min = ',xMin
-print 'x_max = ',xMax
-print 'y_min = ',yMin
-print 'y_max = ',yMax
-print 'z_min = ',zMin
-print 'z_max = ',zMax
-print '\n'
-print 'Sort Order = ',sortOrder
-print '\n'
-print 'Number of faces (new) = ', nFaces
+print('\n')
+print('Number of vertices = ', nVertices)
+print('Number of faces (original) = ', nFaces)
+print('\n')
+print('x_min = ',xMin)
+print('x_max = ',xMax)
+print('y_min = ',yMin)
+print('y_max = ',yMax)
+print('z_min = ',zMin)
+print('z_max = ',zMax)
+print('\n')
+print('Sort Order = ',sortOrder)
+print('\n')
+print('Number of faces (new) = ', nFaces)

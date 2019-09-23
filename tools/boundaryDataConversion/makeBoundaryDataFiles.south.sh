@@ -9,8 +9,8 @@
 #boundaryNameOld="west"
 #boundaryNameNew="west"
 
-boundaryNameOld="north"
-boundaryNameNew="north"
+boundaryNameOld="south"
+boundaryNameNew="south"
 
 #boundaryNameOld="top"
 #boundaryNameNew="top"
@@ -43,7 +43,7 @@ do
       #                                        xmin      xmax   ymin      ymax   zmin   zmax   orientation
       #./points.py vertices faces points index -0.1       0.1    0.0   10000.0    0.0 1000.1   yz
       #./points.py vertices faces points index  0.0    4000.0 4000.0    4000.0    0.0 1000.0   xz
-       ./points.py vertices faces points index  0.0   10000.0 7999.0    8000.1    0.0 1000.1   xz
+       ./points.py vertices faces points index  0.0   10000.0 -0.1    0.1    0.0 1000.1   xz
       #./points.py vertices faces points index  0.0    4000.0    0.0    4000.0 1000.0 1000.0   xy
       rm points.py faces vertices
    fi
@@ -67,7 +67,7 @@ do
    ./data.py kPre k ../index
    #./data.py nuLESPre nuLES ../index
    #./data.py kappaLESPre kappaLES ../index
-   rm data.py *Pre	
+   rm data.py *Pre
 
    cd ../
 done

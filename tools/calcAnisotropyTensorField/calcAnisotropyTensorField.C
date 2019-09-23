@@ -22,10 +22,10 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    createGradientFields
+    calcAnisotropyTensorField
 
 Description
-    Creates a gradient fields of UAvg, kResolved, kSGSmean, p_rghAvg, TAvg, which are relevant to ML.
+    Calculate and create the anisotropy tensor bij field from exisiting Reynolds stress uuPrime2 field.
 
 Source files:
     readFields.H

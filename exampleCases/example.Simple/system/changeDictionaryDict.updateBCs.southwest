@@ -53,8 +53,8 @@ dictionaryReplacement
             south
             {
                 // For RANS, it should read
-                // contant/boundaryData/south/0/T and
-                // contant/boundaryData/south/99999/T
+                // contant/boundaryDataRANS/south/0/T and
+                // contant/boundaryDataRANS/south/100000/T
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
                 peturb          1e-05;
@@ -81,6 +81,8 @@ dictionaryReplacement
             }
         }
     }
+
+    // No change to U w.r.t. original changeDictionaryDict
     U
     {
         boundaryField
@@ -121,6 +123,7 @@ dictionaryReplacement
             }
         }
     }
+
     k
     {
         boundaryField
@@ -158,6 +161,7 @@ dictionaryReplacement
             }
         }
     }
+
     kappat
     {
         boundaryField
@@ -184,6 +188,7 @@ dictionaryReplacement
             }
         }
     }
+
     nut
     {
         boundaryField
@@ -218,6 +223,7 @@ dictionaryReplacement
             }
         }
     }
+
     p_rgh
     {
         boundaryField
@@ -254,6 +260,8 @@ dictionaryReplacement
             }
         }
     }
+
+    // qwall is not changed w.r.t. original changeDictionaryDict
     qwall
     {
         boundaryField
@@ -290,6 +298,8 @@ dictionaryReplacement
             }
         }
     }
+
+    // Rwall is not changed w.r.t. original changeDictionaryDict
     Rwall
     {
         boundaryField
@@ -331,6 +341,7 @@ dictionaryReplacement
             }
         }
     }
+
     epsilon
     {
         boundaryField
@@ -340,27 +351,33 @@ dictionaryReplacement
                 type            epsilonWallFunction;
                 Cmu             $Cmu;
                 kappa           $kappa;
-                value           uniform 0.000765;
+                value           uniform 0.001;
             }
             upper
             {
-                type            fixedValue;
-                value           uniform 0.000765;
+                type            zeroGradient;  //fixedValue;
+                value           uniform 1e-5;
             }
             east
             {
                 type            zeroGradient;
-                value           uniform 0.000765;
+                value           uniform 0.1;
             }
             west
             {
-                type            fixedValue;
-                value           uniform 0.000765;
+                type            timeVaryingMappedFixedValue;
+                setAverage      0;
+                peturb          1e-05;
+                offset          0;
+                value           uniform 0.1;
             }
             south
             {
-                type            fixedValue;
-                value           uniform 0.000765;
+                type            timeVaryingMappedFixedValue;
+                setAverage      0;
+                peturb          1e-05;
+                offset          0;
+                value           uniform 0.1;
             }
             /*
             west
@@ -381,7 +398,7 @@ dictionaryReplacement
             north
             {
                 type            zeroGradient;
-                value           uniform 0.000765;
+                value           uniform 0.1;
             }
         }
     }

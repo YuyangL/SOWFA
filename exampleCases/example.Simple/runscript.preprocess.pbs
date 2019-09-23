@@ -106,8 +106,8 @@ rm -rf 0/{cc*,V*}
 rm -rf 0/uniform
 # For RANS, nuSgs becomes nut, so rename it
 mv 0/nuSgs.gz 0/nut.gz
-# Precursor didn't save the TKE disspiation rate epsilon field, create it
-cp 0.original/epsilon 0/
+# Also epsilonSGS becomes epsilon
+mv 0/epsilonSGS.gz 0/epsilon.gz
 
 
 # Build the mesh.
@@ -139,13 +139,15 @@ if [ $updateBCType -eq 1 ]
    changeDictionary -dict system/changeDictionaryDict.updateBCs.$inflowDir -time 0 -enableFunctionEntries > log.changeDictionary.updateBCs.$inflowDir.1 2>&1
 fi
 
-# Map bij fields from LES to this mesh, the BC of bij from LES is untouched
-echo "Creating bij in ${lesDir} if not already and mapping it to this mesh grid..."
-mapReynoldsStress.sh $lesDir |& tee log.mapReynoldsStress
 
 # Do serial local refinement
 echo "Using refineHexMesh to perform " $localRefinementLevels " of local refinement..."
 refineMeshLocal $localRefinementLevels
+
+
+# Map bij fields from LES to this mesh, the BC of bij from LES is untouched
+echo "Creating bij in ${lesDir} if not already and mapping it to this mesh grid..."
+mapReynoldsStress.sh $lesDir |& tee log.mapReynoldsStress
 
 
 # If running in paralle from this point forward, then do the following:

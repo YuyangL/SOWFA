@@ -175,8 +175,8 @@ int main(int argc, char *argv[])
         // Gonna output Reynolds stress R here now that R has been initialized in createFields.H
         if (runTime.outputTime())
         {
-            R = turbulence->R();
-            R.write();
+            Rij = turbulence->R();
+            Rij.write();
         }
 
         runTime.write();
