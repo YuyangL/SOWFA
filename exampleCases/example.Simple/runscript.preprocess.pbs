@@ -99,15 +99,13 @@ cp system/controlDict.1 system/controlDict
 echo "Getting the initial condition directory from the precursor..."
 # Whatever physical time to start with, we start at 0
 rm -rf 0
-cp -rf $precursorDir/$startTime 0
-# Remove cell center coordinate that corresponds to the old mesh
-rm -rf 0/{cc*,V*}
-# Also remove uniform that contained the old physical time
-rm -rf 0/uniform
+rsync -avh $precursorDir/$startTime/{U.gz,T.gz,p_rgh.gz,nuSgs.gz,qwall.gz,Rwall.gz,epsilonTotal.gz,kTotal.gz,kappat.gz} 0/
 # For RANS, nuSgs becomes nut, so rename it
 mv 0/nuSgs.gz 0/nut.gz
-# Also epsilonSGS becomes epsilon
-mv 0/epsilonSGS.gz 0/epsilon.gz
+# Also epsilonTotal becomes epsilon
+mv 0/epsilonTotal.gz 0/epsilon.gz
+# Also kTotal becomes k
+mv 0/kTotal.gz 0/k.gz
 
 
 # Build the mesh.

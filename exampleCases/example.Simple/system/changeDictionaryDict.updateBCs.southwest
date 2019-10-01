@@ -203,22 +203,22 @@ dictionaryReplacement
             }
             south
             {
-                type            zeroGradient;
+                type            calculated;  // zeroGradient;
                 value           uniform 0.0;
             }
             north
             {
-                type            zeroGradient;
+                type            calculated;  // zeroGradient;
                 value           uniform 0.0;
             }
             west
             {
-                type            zeroGradient;
+                type            calculated;  // zeroGradient;
                 value           uniform 0.0;
             }
             east
             {
-                type            zeroGradient;
+                type            calculated;  // zeroGradient;
                 value           uniform 0.0;
             }
         }

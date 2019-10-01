@@ -49,11 +49,11 @@ do
    fi
 
    # make the time directory and process the flow variable data. Note, that this
-   # is set up to process epsilonSGS. Add more variables
+   # is set up to process epsilonTotal. Add more variables
    # as desired.
    mkdir $time
    cd $time
-   cp ../../../surfaces/$time/$boundaryNameOld/scalarField/epsilonSGS ./epsilonPre
+   cp ../../../surfaces/$time/$boundaryNameOld/scalarField/epsilonTotal ./epsilonPre
    #cp ../../../boundaryDataPre/$time/$boundaryNameOld/scalarField/pd ./pdPre
    # cp ../../../boundaryDataPre/$time/$boundaryNameOld/scalarField/T ./TPre
    # cp ../../../boundaryDataPre/$time/$boundaryNameOld/scalarField/k ./kPre

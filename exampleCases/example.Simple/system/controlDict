@@ -25,13 +25,13 @@ FoamFile
 
   stopAt            endTime;
 
-  endTime           5000;
+  endTime           25000;
 
   deltaT            1;
 
   writeControl      adjustableRunTime;
 
-  writeInterval     500;
+  writeInterval     1000;
 
   purgeWrite        0;
 
@@ -58,6 +58,22 @@ FoamFile
      // #include "calcFvcGrad"
     #include "sampling/sliceDataInstantaneous_OneTurb"
     #include "sampling/probesData_OneTurb"
+
+    residuals
+    {
+        functionObjectLibs ("libutilityFunctionObjects.so");
+        type            residuals;
+        outputControl   timeStep;
+        outputInterval  1;
+        fields
+        (
+            U
+            p_rgh
+            T
+            epsilon
+            k
+        );
+    }
 
     /*
     // Doesn't work
