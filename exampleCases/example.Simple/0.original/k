@@ -27,26 +27,68 @@ boundaryField
     lower
     {
         type            kqRWallFunction;  // It's simply zeroGradient
+        value           uniform 0.1;
     }
     upper
     {
         type            zeroGradient;
+        value           uniform 0.1;
     }
     east
     {
-        type            cyclic;
+        type            zeroGradient;
+        value           uniform 0.1;
     }
     west
     {
-        type            cyclic;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb          0.0;
+        offset          0;
+        mapMethod       nearest;
     }
     south
     {
-        type            cyclic;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       nearest;
     }
+
+    /*
+    west
+    {
+        type            atmBoundaryLayerInletK;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        Cmu             $Cmu;
+        kappa           $kappa;
+        value           uniform $k0;
+    }
+    south
+    {
+        type            atmBoundaryLayerInletK;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        Cmu             $Cmu;
+        kappa           $kappa;
+        value           uniform $k0;
+    }
+    */
+
     north
     {
-        type            cyclic;
+        type            zeroGradient;
+        value           uniform 0.1;
     }
 }
 

@@ -215,9 +215,9 @@
     );
 */
 
-    // Create an object of the horizontalWindTurbineArray class if there
-    // is to be a turbine array
-    turbineModels::horizontalAxisWindTurbinesADM turbines(U);
+    // // Create an object of the horizontalWindTurbineArray class if there
+    // // is to be a turbine array
+    // turbineModels::horizontalAxisWindTurbinesADM turbines(U);
 
     // Create Coriolis force vector
     Info << "Creating the Coriolis force vector, fCoriolis..." << endl;

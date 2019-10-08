@@ -57,9 +57,9 @@ dictionaryReplacement
                 // contant/boundaryDataRANS/south/100000/T
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          0;
-                value           uniform 300;
+                mapMethod       nearest;
             }
             north
             {
@@ -70,9 +70,9 @@ dictionaryReplacement
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          0;
-                value           uniform 300;
+                mapMethod       nearest;
             }
             east
             {
@@ -97,9 +97,9 @@ dictionaryReplacement
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          (0 0 0);
-                value           uniform (0 0 0);
+                mapMethod       nearest;
             }
             north
             {
@@ -111,10 +111,38 @@ dictionaryReplacement
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          (0 0 0);
-                value           uniform (0 0 0);
+                mapMethod       nearest;
             }
+            /*
+            west
+            {
+                type            atmBoundaryLayerInletVelocity;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                Cmu             $Cmu;
+                kappa           $kappa;
+                value           uniform $U0Mag;
+            }
+            south
+            {
+                type            atmBoundaryLayerInletVelocity;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                Cmu             $Cmu;
+                kappa           $kappa;
+                value           uniform $U0Mag;
+            }
+            */
             east
             {
                 type            inletOutlet;
@@ -133,13 +161,18 @@ dictionaryReplacement
                 type            kqRWallFunction;  // It's simply zeroGradient
                 value           uniform 0.1;
             }
+            upper
+            {
+                type            zeroGradient;
+                value           uniform 0.1;
+            }
             south
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          0;
-                value           uniform 0.1;
+                mapMethod       nearest;
             }
             north
             {
@@ -150,10 +183,38 @@ dictionaryReplacement
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          0;
-                value           uniform 0.1;
+                mapMethod       nearest;
             }
+            /*
+            west
+            {
+                type            atmBoundaryLayerInletK;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                Cmu             $Cmu;
+                kappa           $kappa;
+                value           uniform $k0;
+            }
+            south
+            {
+                type            atmBoundaryLayerInletK;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                Cmu             $Cmu;
+                kappa           $kappa;
+                value           uniform $k0;
+            }
+            */
             east
             {
                 type            zeroGradient;
@@ -289,7 +350,7 @@ dictionaryReplacement
             lower
             {
                 type            fixedValue;
-                value           uniform (0 0 0);
+                value           uniform $qwall;
             }
             upper
             {
@@ -332,7 +393,7 @@ dictionaryReplacement
                 betaM           $betaM;
                 gammaM          $gammaM;
                 averageType     "local";
-                value           uniform (0 0 0 0 0 0);
+                value           uniform $Rwall;
             }
             upper
             {
@@ -367,32 +428,44 @@ dictionaryReplacement
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          0;
-                value           uniform 0.1;
+                mapMethod       nearest;
             }
             south
             {
                 type            timeVaryingMappedFixedValue;
                 setAverage      0;
-                peturb          1e-05;
+                perturb         0.0;
                 offset          0;
-                value           uniform 0.1;
+                mapMethod       nearest;
             }
             /*
             west
             {
-                type            turbulentMixingLengthDissipationRateInlet;
-                mixingLength    1;  // ?
-                k               "k";
-                value           uniform 200;  // Placeholder
+                type            atmBoundaryLayerInletEpsilon;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Cmu             $Cmu;
+                kappa           $kappa;
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                value           uniform $epsilon0;
             }
             south
             {
-                type            turbulentMixingLengthDissipationRateInlet;
-                mixingLength    1;  // ?
-                k               "k";
-                value           uniform 200;  // Placeholder
+                type            atmBoundaryLayerInletEpsilon;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Cmu             $Cmu;
+                kappa           $kappa;
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                value           uniform $epsilon0;
             }
             */
             north

@@ -16,7 +16,6 @@ EXE_LIBS = \
     -lincompressibleTransportModels \
     -lincompressibleTurbulenceModel \
     -lincompressibleRASModels \
-    -lSOWFATurbineModelsStandard \
     -lfiniteVolume \
     -lmeshTools \
     -lfvOptions \

@@ -20,43 +20,73 @@ FoamFile
 
 dimensions      [0 2 -3 0 0 0 0];
 
-internalField   uniform 0.000765;
+internalField   uniform $epsilon0;
 
 boundaryField
 {
     lower
     {
         type            epsilonWallFunction;
-        value           uniform 0.000765;
+        value           uniform $epsilon0;  // Not sure if this is used
     }
     upper
     {
-        type            fixedValue;
-        value           uniform 0.000765;
+        type            zeroGradient;
+        value           uniform 0.1;  // Placeholder
     }
     east
     {
         type            zeroGradient;
-        value           uniform 0.000765;
+        value           uniform 0.1;
     }
     west
     {
-        type            turbulentMixingLengthDissipationRateInlet;
-        mixingLength    1;  // ?
-        k               "k";
-        value           uniform 200;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        peturb          0.0;
+        offset          0;
+        mapMethod       nearest;
     }
     south
     {
-        type            turbulentMixingLengthDissipationRateInlet;
-        mixingLength    1;  // ?
-        k               "k";
-        value           uniform 200;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       nearest;
     }
+    /*
+    west
+    {
+        type            atmBoundaryLayerInletEpsilon;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Cmu             $Cmu;
+        kappa           $kappa;
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        value           uniform $epsilon0;
+    }
+    south
+    {
+        type            atmBoundaryLayerInletEpsilon;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Cmu             $Cmu;
+        kappa           $kappa;
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        value           uniform $epsilon0;
+    }
+    */
     north
     {
         type            zeroGradient;
-        value           uniform 0.000765;
+        value           uniform 0.1;
     }
 }
 

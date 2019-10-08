@@ -153,7 +153,7 @@
             mesh
         ),
         1.0 - ( (T - TRef)/TRef )
-    );   
+    );
 
     // Create and read the turbulent thermal conductivity field
     Info << "Creating the kinematic thermal conductivity field, kappat..." << endl;
@@ -184,7 +184,7 @@
         ),
         mesh
     );
-    
+
     // Create the wall temperature flux field
     Info << "Reading and creating the wall temperature flux field, qwall..." << endl;
     volVectorField qwall
@@ -242,4 +242,3 @@
             pRefValue - getRefCellValue(p, pRefCell)
         );
     }
-

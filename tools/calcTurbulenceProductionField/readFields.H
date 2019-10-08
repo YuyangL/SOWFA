@@ -1,3 +1,4 @@
+
 // Read the velocity field
 Info << "Reading instantenous velocity field, U..." << endl;
 volVectorField U
@@ -13,20 +14,20 @@ volVectorField U
     mesh
 );
 
-// Read the temperature field
-Info << "Reading instantenous temperatire field, T..." << endl;
-volScalarField T
-(
-    IOobject
-    (
-        "T",
-        runTime.timeName(),
-        mesh,
-        IOobject::MUST_READ,
-        IOobject::NO_WRITE
-    ),
-    mesh
-);
+// // Read the temperature field
+// Info << "Reading instantenous temperatire field, T..." << endl;
+// volScalarField T
+// (
+//     IOobject
+//     (
+//         "T",
+//         runTime.timeName(),
+//         mesh,
+//         IOobject::MUST_READ,
+//         IOobject::NO_WRITE
+//     ),
+//     mesh
+// );
 
 // Read the gravitational acceleration
 Info << "Reading the gravitational acceleration, g..." << endl;
@@ -45,6 +46,10 @@ uniformDimensionedVectorField g
 // Create and calculate the velocity flux
 Info << "Creating and calculating velocity flux field, phi..." << endl;
 #   include "createPhi.H"
+
+// // Read the transport properties and set up the laminar (molecular) transport model
+// Info << "Reading transport properties..." << endl;
+// #include "readTransportProperties.H"
 
 Info << "Creating turbulence model..." << endl;
 singlePhaseTransportModel laminarTransport(U, phi);
@@ -68,17 +73,32 @@ autoPtr<incompressible::turbulenceModel> turbulence
 //     mesh
 // );
 
-// Read moleculer viscosity field
-Info<< "Reading moleculer viscosity field, nu..." << endl;
-volScalarField nu
+// // Read moleculer viscosity field
+// Info<< "Reading moleculer viscosity field, nu..." << endl;
+// volScalarField nu
+// (
+//     IOobject
+//     (
+//         "nu",
+//         runTime.timeName(),
+//         mesh,
+//         IOobject::NO_READ,
+//         IOobject::NO_WRITE
+//     ),
+//     turbulence->nu()
+// );
+
+// Read turbulent kinetic energy field
+Info<< "Reading turbulent kinetic energy field, k..." << endl;
+volScalarField k
 (
     IOobject
     (
-        "nu",
+        "k",
         runTime.timeName(),
         mesh,
-        IOobject::NO_READ,
+        IOobject::MUST_READ,
         IOobject::NO_WRITE
     ),
-    turbulence->nu()
+    mesh
 );

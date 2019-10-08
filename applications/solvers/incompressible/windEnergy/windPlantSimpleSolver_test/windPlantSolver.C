@@ -56,7 +56,8 @@ Description
 #include "interpolateSplineXY.H"
 #include "interpolateXY.H"
 #include "interpolate2D.H"
-#include "horizontalAxisWindTurbinesADM.H"
+// No wind turbine model
+// #include "horizontalAxisWindTurbinesADM.H"
 // From bouoyantBoussinesqSimpleFoam.
 // Don't need fvOptions as sources and buoyancy forces are manually added
 // #include "fvIOoptionsList.H"
@@ -151,8 +152,8 @@ int main(int argc, char *argv[])
         turbulence->correct();
         // }
 
-        // --- Update the turbine array
-        turbines.update();
+        // // --- Update the turbine array
+        // turbines.update();
 
         // --- Update the boundary momentum and
         //     temperature flux conditions

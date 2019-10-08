@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
             //     temperature flux conditions
             Rwall.correctBoundaryConditions();
             qwall.correctBoundaryConditions();
-        }   
+        }
 
 
         #include "computeAverageFields.H"
