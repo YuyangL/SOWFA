@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
     T.correctBoundaryConditions();
   //p_rgh.correctBoundaryConditions();
     turbulence->correct();
-    Rwall.correctBoundaryConditions();
+    // Shear stress at wall is taken care of by nut wall function
+    // Rwall.correctBoundaryConditions();
     qwall.correctBoundaryConditions();
 
     while (simple.loop())
@@ -156,7 +157,7 @@ int main(int argc, char *argv[])
 
         // --- Update the boundary momentum and
         //     temperature flux conditions
-        Rwall.correctBoundaryConditions();
+        // Rwall.correctBoundaryConditions();
         qwall.correctBoundaryConditions();
         // }
 

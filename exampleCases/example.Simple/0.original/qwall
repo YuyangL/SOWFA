@@ -27,31 +27,31 @@ boundaryField
     {
         type            fixedValue;
         value           uniform $qwall;
-    } 
+    }
     upper
     {
         type            fixedValue;
-        value           $internalField;
+        value           uniform (0 0 0);
     }
-    west 
+    west
     {
-        type            cyclic;
-        value           $internalField;
+        type            fixedValue;
+        value           uniform (0 0 0);
     }
-    east 
+    east
     {
-        type            cyclic;
-        value           $internalField;
+        type            fixedValue;
+        value           uniform (0 0 0);
     }
-    north 
+    north
     {
-        type            cyclic;
-        value           $internalField;
+        type            fixedValue;
+        value           uniform (0 0 0);
     }
     south
     {
-        type            cyclic;
-        value           $internalField;
+        type            fixedValue;
+        value           uniform (0 0 0);
     }
 }
 

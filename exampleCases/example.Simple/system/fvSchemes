@@ -23,26 +23,28 @@ ddtSchemes
 
 gradSchemes
 {
-    default                        Gauss linear;
-    grad(U)                        Gauss linear;
+    // Limits the gradient such that when cell values are extrapolated to faces using the calculated gradient, the face values do not fall outside the bounds of values in surrounding cells. A limiting coefficient is specified after the underlying scheme for which 1 guarantees boundedness
+    default                        cellMDLimited Gauss linear 0.5;
+    grad(U)                        cellMDLimited Gauss linear 1;
+    grad(k)                        cellMDLimited Gauss linear 1;
+    grad(epsilon)                  cellMDLimited Gauss linear 1;
 }
 
 divSchemes
 {
-    default                        Gauss linear;
-  //div(phi,U)                     Gauss linear;
-  //div(phi,T)                     Gauss linear;
     // phi is div(U)
+    default                        bounded Gauss linear;
+    // Sometmes pure linear differencing, which provides no artificial diffusion, causes instability, so a blend of linear plus a small amount of upwind is used
     div(phi,U)                     bounded Gauss localBlended linear upwind;
     div(phi,T)                     bounded Gauss localBlended linear upwind;
-    div(R)                         Gauss linear;
-    div(U)                         Gauss linear;
-    div((nuEff*dev(grad(U).T())))  Gauss linear;
-    div(B)                         Gauss linear;
+    div(R)                         bounded Gauss linear;
+    div(U)                         bounded Gauss linear;
+    div((nuEff*dev(grad(U).T())))  bounded Gauss linear;
+    div(B)                         bounded Gauss linear;
     div(phi,B)                     bounded Gauss linear;
+    // upwind interpolation for better convergence
     div(phi,k)                     bounded Gauss upwind;
-    // Bounded non-linear term
-    div(phi,epsilon)               bounded Gauss upwind;  // upwind interpolation for better convergence
+    div(phi,epsilon)               bounded Gauss upwind;
 }
 
 laplacianSchemes
@@ -56,7 +58,7 @@ laplacianSchemes
     laplacian(nuEff,U)             Gauss linear corrected;
     laplacian(kappaEff,T)          Gauss linear corrected;
     laplacian(DBEff,B)             Gauss linear corrected;
-    laplacian(nut,U)             Gauss linear corrected;
+    laplacian(nut,U)               Gauss linear corrected;
 }
 
 interpolationSchemes
@@ -66,6 +68,7 @@ interpolationSchemes
 
 snGradSchemes
 {
+    // The surface normal gradients terms usually use the same method as the one chosen for the Laplacian terms.
     default                        corrected;
 }
 

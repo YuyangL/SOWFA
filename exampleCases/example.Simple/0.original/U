@@ -20,43 +20,100 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0 0 0);
+internalField   uniform ($U0Mag 0 0);
 
 boundaryField
 {
     lower
     {
         type            fixedValue;
-        value           uniform (0 0 0);
-    }
-    /* Velocity wall function not necessary anymore since it's inferred from nut wall function thus avoid getting 0 U
-    lower
-    {
+
+        /* Velocity wall function not necessary anymore since it's inferred from nut wall function thus avoid getting 0 U
         type            velocityABLWallFunction;
         print           true;
         U               U;
-        value           $internalField;
+        */
+
+        value           uniform (0 0 0);
     }
-    */
+
     upper
     {
-        type            slip;
+        type slip;
+        value           $internalField;
     }
+
     west
     {
-        type            cyclic;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          (0 0 0);
+        mapMethod       planarInterpolation;
+        value           uniform ($U0Mag 0 0);
     }
+
     east
     {
-        type            cyclic;
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+
+        /*
+        type            freeStream;
+        // For reverse flow, east patch falls back to inflow BC profile
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletVelocity;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform ($U0Mag 0 0);  // Don't think this is used;
+        }
+        */
+
+        value           $internalField;
     }
+
     south
     {
-        type            cyclic;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          (0 0 0);
+        mapMethod       planarInterpolation;
+        value           uniform ($U0Mag 0 0);
     }
+
     north
     {
-        type            cyclic;
+        // For reverse flow, increase velocity to (0 0 0)
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+
+        /*
+        type            freeStream;
+        // For reverse flow, east patch falls back to inflow BC profile
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletVelocity;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform ($U0Mag 0 0);  // Don't think this is used;
+        }
+        */
+
+        value           $internalField;
     }
 }
 

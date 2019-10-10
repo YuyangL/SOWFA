@@ -27,37 +27,87 @@ boundaryField
     lower
     {
         type            epsilonWallFunction;
-        value           uniform $epsilon0;  // Not sure if this is used
+        Cmu             $Cmu;
+        kappa           $kappa;
+        value           uniform 1e-12;  // Not sure if this is used
     }
+
     upper
     {
-        type            zeroGradient;
-        value           uniform 0.1;  // Placeholder
+        type            slip;
+
+        /*
+        // If reverse flow, use inflow BC profile, otherwise, use zeroGradient
+        type            freeStream;
+        freeStreamValue uniform $epsilon0;
+        */
+
+        /* Since atmBoundaryLayerInletEpsilon tend to overpredict epsilon by 10 times, not using it
+        type            freeStream;
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletEpsilon;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Cmu             $Cmu;
+            kappa           $kappa;
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            value           uniform $epsilon0;
+        }
+        */
+
+        value           uniform $epsilon0;
     }
+
     east
     {
-        type            zeroGradient;
-        value           uniform 0.1;
+        // Since inletValue of k is 0, epsilon is ~0 (avoid FPE) too
+        type            inletOutlet;
+        inletValue      uniform 1e-12;
+
+        /*
+        type            freeStream;
+        freeStreamValue uniform 1e-12;
+        */
+
+        value           uniform 1e-12;
     }
+
     west
     {
         type            timeVaryingMappedFixedValue;
         setAverage      0;
-        peturb          0.0;
+        perturb         0.0;
         offset          0;
-        mapMethod       nearest;
+        mapMethod       planarInterpolation;
+
+        /*
+        type            atmBoundaryLayerInletEpsilon;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Cmu             $Cmu;
+        kappa           $kappa;
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        */
+
+        value           uniform $epsilon0;
     }
+
     south
     {
         type            timeVaryingMappedFixedValue;
         setAverage      0;
         perturb         0.0;
         offset          0;
-        mapMethod       nearest;
-    }
-    /*
-    west
-    {
+        mapMethod       planarInterpolation;
+
+        /*
         type            atmBoundaryLayerInletEpsilon;
         flowDir         (0.8660254037844 0.5 0);
         zDir            (0 0 1);
@@ -67,26 +117,22 @@ boundaryField
         Zref            $windHeight;
         z0              uniform $z0;
         zGround         uniform 0.0;
+        */
+
         value           uniform $epsilon0;
     }
-    south
-    {
-        type            atmBoundaryLayerInletEpsilon;
-        flowDir         (0.8660254037844 0.5 0);
-        zDir            (0 0 1);
-        Cmu             $Cmu;
-        kappa           $kappa;
-        Uref            $U0Mag;
-        Zref            $windHeight;
-        z0              uniform $z0;
-        zGround         uniform 0.0;
-        value           uniform $epsilon0;
-    }
-    */
+
     north
     {
-        type            zeroGradient;
-        value           uniform 0.1;
+        type            inletOutlet;
+        inletValue      uniform 1e-12;
+
+        /*
+        type            freeStream;
+        freeStreamValue uniform 1e-12;
+        */
+
+        value           uniform 1e-12;
     }
 }
 

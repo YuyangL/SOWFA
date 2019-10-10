@@ -17,7 +17,7 @@ FoamFile
 globalProperties
 {
     outputControl       "runTime";
-    outputInterval       1;
+    outputInterval       10;
 }
 
 
@@ -32,16 +32,16 @@ turbine0
     pointDistType       "uniform";
     pointInterpType     "linear";
     bladeUpdateType     "oldPosition";
-    epsilon              10.0;  // About twice the cell size
+    epsilon              20.0;  // About twice the cell size
     forceScalar          1.0;
-    inflowVelocityScalar 0.94;
+    inflowVelocityScalar 0.94;  // Scale to match experiment
     tipRootLossCorrType "Glauert";
     rotationDir         "cw";
     Azimuth              0.0;
     RotSpeed             9.15519863;
     TorqueGen            0.0;
     Pitch                0.0;
-    NacYaw             240.0;
+    NacYaw               240.0;  // Important parameter
     fluidDensity         1.225;
 }
 

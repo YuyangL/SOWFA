@@ -26,7 +26,7 @@ decompOrder          (6 6 5);                   // Order of the decomposition nu
 
 // Planar averaging and source term statistics options.
 statisticsOn         true;                        // Gather planar-averaged flow statistics.
-statisticsFrequency  5;                           // Frequency in time steps of statistics gathering.
+statisticsFrequency  100;                         // Frequency in time steps of statistics gathering.
 
 
 // Initial values for the variables.
@@ -73,6 +73,8 @@ mix_verbose           1;  // 0, 1, 2
 // nutkRoughWallFunction
 Ks		      2.5;                  // min(20z0, 0.5delta)
 Cs		      0.7784;               // Cs = E/Ks*z0 with E = 9.73
+// Both nutkRoughWallFunction and kappat's alphatJayatillekeWallFunction
+E             9.73;                  // Usually 9.73
 
 
 // Surface conditions.

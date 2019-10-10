@@ -26,33 +26,43 @@ boundaryField
 {
     lower
     {
+        // This boundary condition provides a kinematic turbulent thermal conductivity
+        // for using wall functions, using the Jayatilleke 'P' function.
+        type            alphatJayatillekeWallFunction;
+        Prt             $Prt;
+        Cmu             $Cmu;
+        kappat          $kappa;
+        E               $E;
+
+        /*
         type            fixedValue;
         value           uniform 0.0;
+        */
     }
     upper
     {
-        type            fixedValue;
+        type            calculated;  // fixedValue;
         value           uniform 0.0;
     }
-    west 
+    west
     {
-        type            cyclic;
-        value           $internalField;
+        type            calculated;
+        value           uniform 0.0;  // Placeholder
     }
-    east 
+    east
     {
-        type            cyclic;
-        value           $internalField;
+        type            calculated;
+        value           uniform 0.0;
     }
-    north 
+    north
     {
-        type            cyclic;
-        value           $internalField;
+        type            calculated;
+        value           uniform 0.0;
     }
     south
     {
-        type            cyclic;
-        value           $internalField;
+        type            calculated;
+        value           uniform 0.0;
     }
 }
 

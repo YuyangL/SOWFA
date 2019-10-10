@@ -59,12 +59,14 @@ dictionaryReplacement
                 setAverage      0;
                 perturb         0.0;
                 offset          0;
-                mapMethod       nearest;
+                mapMethod       planarInterpolation;
+                value           uniform $TBottom;
             }
             north
             {
-                type            zeroGradient;
-                value           uniform 300;
+                type            inletOutlet;
+                inletValue      uniform $TBottom;
+                value           uniform $TBottom;
             }
             west
             {
@@ -72,39 +74,32 @@ dictionaryReplacement
                 setAverage      0;
                 perturb         0.0;
                 offset          0;
-                mapMethod       nearest;
+                mapMethod       planarInterpolation;
+                value           uniform $TBottom;
             }
             east
             {
-                type            zeroGradient;
-                value           uniform 300;
+                type            inletOutlet;
+                inletValue      uniform $TBottom;
+                value           uniform $TBottom;
             }
         }
     }
 
-    // No change to U w.r.t. original changeDictionaryDict
     U
     {
         boundaryField
         {
-            // Velocity wall function not necessary anymore since it's inferred from nut wall function thus avoid getting 0 U
             lower
             {
                 type            fixedValue;
-                value           uniform (0 0 0);
-            }
-            south
-            {
-                type            timeVaryingMappedFixedValue;
-                setAverage      0;
-                perturb         0.0;
-                offset          (0 0 0);
-                mapMethod       nearest;
-            }
-            north
-            {
-                type            inletOutlet;
-                inletValue      uniform (0 0 0);
+
+                /* Velocity wall function not necessary anymore since it's inferred from nut wall function thus avoid getting 0 U
+                type            velocityABLWallFunction;
+                print           true;
+                U               U;
+                */
+
                 value           uniform (0 0 0);
             }
             west
@@ -113,40 +108,67 @@ dictionaryReplacement
                 setAverage      0;
                 perturb         0.0;
                 offset          (0 0 0);
-                mapMethod       nearest;
+                mapMethod       planarInterpolation;
+                value           uniform ($U0Mag 0 0);
             }
-            /*
-            west
-            {
-                type            atmBoundaryLayerInletVelocity;
-                flowDir         (0.8660254037844 0.5 0);
-                zDir            (0 0 1);
-                Uref            $U0Mag;
-                Zref            $windHeight;
-                z0              uniform $z0;
-                zGround         uniform 0.0;
-                Cmu             $Cmu;
-                kappa           $kappa;
-                value           uniform $U0Mag;
-            }
-            south
-            {
-                type            atmBoundaryLayerInletVelocity;
-                flowDir         (0.8660254037844 0.5 0);
-                zDir            (0 0 1);
-                Uref            $U0Mag;
-                Zref            $windHeight;
-                z0              uniform $z0;
-                zGround         uniform 0.0;
-                Cmu             $Cmu;
-                kappa           $kappa;
-                value           uniform $U0Mag;
-            }
-            */
             east
             {
                 type            inletOutlet;
                 inletValue      uniform (0 0 0);
+
+                /*
+                type            freeStream;
+                // For reverse flow, east patch falls back to inflow BC profile
+                freeStreamBC
+                {
+                    type            atmBoundaryLayerInletVelocity;
+                    flowDir         (0.8660254037844 0.5 0);
+                    zDir            (0 0 1);
+                    Uref            $U0Mag;
+                    Zref            $windHeight;
+                    z0              uniform $z0;
+                    zGround         uniform 0.0;
+                    Cmu             $Cmu;
+                    kappa           $kappa;
+                    value           uniform ($U0Mag 0 0);  // Don't think this is used;
+                }
+                */
+
+                value           uniform (0 0 0);
+            }
+            south
+            {
+                type            timeVaryingMappedFixedValue;
+                setAverage      0;
+                perturb         0.0;
+                offset          (0 0 0);
+                mapMethod       planarInterpolation;
+                value           uniform ($U0Mag 0 0);
+            }
+            north
+            {
+                // For reverse flow, increase velocity to (0 0 0)
+                type            inletOutlet;
+                inletValue      uniform (0 0 0);
+
+                /*
+                type            freeStream;
+                // For reverse flow, east patch falls back to inflow BC profile
+                freeStreamBC
+                {
+                    type            atmBoundaryLayerInletVelocity;
+                    flowDir         (0.8660254037844 0.5 0);
+                    zDir            (0 0 1);
+                    Uref            $U0Mag;
+                    Zref            $windHeight;
+                    z0              uniform $z0;
+                    zGround         uniform 0.0;
+                    Cmu             $Cmu;
+                    kappa           $kappa;
+                    value           uniform ($U0Mag 0 0);  // Don't think this is used;
+                }
+                */
+
                 value           uniform (0 0 0);
             }
         }
@@ -159,12 +181,60 @@ dictionaryReplacement
             lower
             {
                 type            kqRWallFunction;  // It's simply zeroGradient
-                value           uniform 0.1;
+                value           uniform 0;
             }
             upper
             {
-                type            zeroGradient;
-                value           uniform 0.1;
+                type            slip;
+                value           uniform $k0;
+            }
+            east
+            {
+                // Since U has inletValue of (0 0 0), k is 0 too
+                type            inletOutlet;
+                inletValue      uniform 0;
+
+                /*
+                type            freeStream;
+                freeStreamBC
+                {
+                    type            atmBoundaryLayerInletK;
+                    flowDir         (0.8660254037844 0.5 0);
+                    zDir            (0 0 1);
+                    Uref            $U0Mag;
+                    Zref            $windHeight;
+                    z0              uniform $z0;
+                    zGround         uniform 0.0;
+                    Cmu             $Cmu;
+                    kappa           $kappa;
+                    value           uniform $k0;
+                }
+                */
+
+                value           uniform 0;
+            }
+            west
+            {
+                type            timeVaryingMappedFixedValue;
+                setAverage      0;
+                perturb         0.0;
+                offset          0;
+                mapMethod       planarInterpolation;
+
+                /*
+                type            atmBoundaryLayerInletK;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                Cmu             $Cmu;
+                kappa           $kappa;
+                */
+
+                value           uniform $k0;
+
             }
             south
             {
@@ -172,53 +242,45 @@ dictionaryReplacement
                 setAverage      0;
                 perturb         0.0;
                 offset          0;
-                mapMethod       nearest;
+                mapMethod       planarInterpolation;
+
+                /*
+                type            atmBoundaryLayerInletK;
+                flowDir         (0.8660254037844 0.5 0);
+                zDir            (0 0 1);
+                Uref            $U0Mag;
+                Zref            $windHeight;
+                z0              uniform $z0;
+                zGround         uniform 0.0;
+                Cmu             $Cmu;
+                kappa           $kappa;
+                */
+
+                value           uniform $k0;
             }
             north
             {
-                type            zeroGradient;
-                value           uniform 0.1;
-            }
-            west
-            {
-                type            timeVaryingMappedFixedValue;
-                setAverage      0;
-                perturb         0.0;
-                offset          0;
-                mapMethod       nearest;
-            }
-            /*
-            west
-            {
-                type            atmBoundaryLayerInletK;
-                flowDir         (0.8660254037844 0.5 0);
-                zDir            (0 0 1);
-                Uref            $U0Mag;
-                Zref            $windHeight;
-                z0              uniform $z0;
-                zGround         uniform 0.0;
-                Cmu             $Cmu;
-                kappa           $kappa;
-                value           uniform $k0;
-            }
-            south
-            {
-                type            atmBoundaryLayerInletK;
-                flowDir         (0.8660254037844 0.5 0);
-                zDir            (0 0 1);
-                Uref            $U0Mag;
-                Zref            $windHeight;
-                z0              uniform $z0;
-                zGround         uniform 0.0;
-                Cmu             $Cmu;
-                kappa           $kappa;
-                value           uniform $k0;
-            }
-            */
-            east
-            {
-                type            zeroGradient;
-                value           uniform 0.1;
+                type            inletOutlet;
+                inletValue      uniform 0;
+
+                /*
+                type            freeStream;
+                freeStreamBC
+                {
+                    type            atmBoundaryLayerInletK;
+                    flowDir         (0.8660254037844 0.5 0);
+                    zDir            (0 0 1);
+                    Uref            $U0Mag;
+                    Zref            $windHeight;
+                    z0              uniform $z0;
+                    zGround         uniform 0.0;
+                    Cmu             $Cmu;
+                    kappa           $kappa;
+                    value           uniform $k0;
+                }
+                */
+
+                value           uniform 0;
             }
         }
     }
@@ -227,24 +289,44 @@ dictionaryReplacement
     {
         boundaryField
         {
-            south
+            lower
             {
-                type            zeroGradient;
+                // This boundary condition provides a kinematic turbulent thermal conductivity
+                // for using wall functions, using the Jayatilleke 'P' function.
+                type            alphatJayatillekeWallFunction;
+                Prt             $Prt;
+                Cmu             $Cmu;
+                kappat          $kappa;
+                E               $E;
+
+                /*
+                type            fixedValue;
                 value           uniform 0.0;
+                */
             }
-            north
+            upper
             {
-                type            zeroGradient;
+                type            calculated;  // fixedValue;
                 value           uniform 0.0;
             }
             west
             {
-                type            zeroGradient;
-                value           uniform 0.0;
+                type            calculated;
+                value           uniform 0.0;  // Placeholder
             }
             east
             {
-                type            zeroGradient;
+                type            calculated;
+                value           uniform 0.0;
+            }
+            north
+            {
+                type            calculated;
+                value           uniform 0.0;
+            }
+            south
+            {
+                type            calculated;
                 value           uniform 0.0;
             }
         }
@@ -254,18 +336,32 @@ dictionaryReplacement
     {
         boundaryField
         {
-            // nutkAtmRoughWallFunction might be better
-            // although it has to be used with the atmBoundaryLayerInletVelocity boundary condition
             lower
             {
+                // Should ensure y+ > 30 and 1st CCZ > 50z0 when using
+                type                nutkAtmRoughWallFunction;
+                z0                  uniform $z0;
+
+                /*
+                // nutkAtmRoughWallFunction might be better
+                // although it should to be used with the atmBoundaryLayerInletVelocity boundary condition
                 type            nutkRoughWallFunction;
-                Ks              uniform $Ks;  // min(20z0, 0.5delta)
+                Ks              uniform $Ks;  // min(30z0, 0.5delta)
                 Cs              uniform $Cs;  // Cs = E/Ks*z0 with E = 9.73
+                */
+
+                value           uniform $nuSgs0;
+            }
+            upper
+            {
+                // Maybe slip?
+                type            calculated;  // zeroGradient;
+                value           uniform 0.0;  // Placeholder
             }
             south
             {
                 type            calculated;  // zeroGradient;
-                value           uniform 0.0;
+                value           uniform 0.0;  // Placeholder
             }
             north
             {
@@ -292,37 +388,27 @@ dictionaryReplacement
             south
             {
                 type            fixedFluxPressure;
-                value           uniform 0.0;
             }
             north
             {
-                type            zeroGradient;
-                value           uniform 0.0;
+                // If reverse flow, use inlet value, otherwise, use zeroGradient
+                type            inletOutlet;
+                inletValue      uniform $p_rgh0;
+                value           uniform $p_rgh0;
             }
             west
             {
                 type            fixedFluxPressure;
-                value           uniform 0.0;
             }
             east
             {
-                type            zeroGradient;
-                value           uniform 0.0;
-            }
-            lower
-            {
-                type            fixedFluxPressure;
-                value           uniform 0.0;
-            }
-            upper
-            {
-                type            fixedFluxPressure;
-                value           uniform 0.0;
+                type            inletOutlet;
+                inletValue      uniform $p_rgh0;
+                value           uniform $p_rgh0;
             }
         }
     }
 
-    // qwall is not changed w.r.t. original changeDictionaryDict
     qwall
     {
         boundaryField
@@ -347,20 +433,10 @@ dictionaryReplacement
                 type            fixedValue;
                 value           uniform (0 0 0);
             }
-            lower
-            {
-                type            fixedValue;
-                value           uniform $qwall;
-            }
-            upper
-            {
-                type            fixedValue;
-                value           uniform (0 0 0);
-            }
         }
     }
 
-    // Rwall is not changed w.r.t. original changeDictionaryDict
+    /* TODO: Not used since nut wall function take its place. Could use Rwall instead of nut wall function?
     Rwall
     {
         boundaryField
@@ -385,23 +461,9 @@ dictionaryReplacement
                 type            fixedValue;
                 value           uniform (0 0 0 0 0 0);
             }
-            lower
-            {
-                type            SchumannGrotzbach;
-                kappa           $kappa;
-                z0              uniform $z0;
-                betaM           $betaM;
-                gammaM          $gammaM;
-                averageType     "local";
-                value           uniform $Rwall;
-            }
-            upper
-            {
-                type            fixedValue;
-                value           uniform (0 0 0 0 0 0);
-            }
         }
     }
+    */
 
     epsilon
     {
@@ -412,17 +474,49 @@ dictionaryReplacement
                 type            epsilonWallFunction;
                 Cmu             $Cmu;
                 kappa           $kappa;
-                value           uniform 0.001;
+                value           uniform 1e-12;  // Not sure if this is used
             }
             upper
             {
-                type            zeroGradient;  //fixedValue;
-                value           uniform 1e-5;
+                type            slip;
+
+                /*
+                // If reverse flow, use inflow BC profile, otherwise, use zeroGradient
+                type            freeStream;
+                freeStreamValue uniform $epsilon0;
+                */
+
+                /* Since atmBoundaryLayerInletEpsilon tend to overpredict epsilon by 10 times, not using it
+                type            freeStream;
+                freeStreamBC
+                {
+                    type            atmBoundaryLayerInletEpsilon;
+                    flowDir         (0.8660254037844 0.5 0);
+                    zDir            (0 0 1);
+                    Cmu             $Cmu;
+                    kappa           $kappa;
+                    Uref            $U0Mag;
+                    Zref            $windHeight;
+                    z0              uniform $z0;
+                    zGround         uniform 0.0;
+                    value           uniform $epsilon0;
+                }
+                */
+
+                value           uniform $epsilon0;
             }
             east
             {
-                type            zeroGradient;
-                value           uniform 0.1;
+                // Since inletValue of k is 0, epsilon is ~0 (avoid FPE) too
+                type            inletOutlet;
+                inletValue      uniform 1e-12;
+
+                /*
+                type            freeStream;
+                freeStreamValue uniform 1e-12;
+                */
+
+                value           uniform 1e-12;
             }
             west
             {
@@ -430,19 +524,9 @@ dictionaryReplacement
                 setAverage      0;
                 perturb         0.0;
                 offset          0;
-                mapMethod       nearest;
-            }
-            south
-            {
-                type            timeVaryingMappedFixedValue;
-                setAverage      0;
-                perturb         0.0;
-                offset          0;
-                mapMethod       nearest;
-            }
-            /*
-            west
-            {
+                mapMethod       planarInterpolation;
+
+                /*
                 type            atmBoundaryLayerInletEpsilon;
                 flowDir         (0.8660254037844 0.5 0);
                 zDir            (0 0 1);
@@ -452,10 +536,19 @@ dictionaryReplacement
                 Zref            $windHeight;
                 z0              uniform $z0;
                 zGround         uniform 0.0;
+                */
+
                 value           uniform $epsilon0;
             }
             south
             {
+                type            timeVaryingMappedFixedValue;
+                setAverage      0;
+                perturb         0.0;
+                offset          0;
+                mapMethod       planarInterpolation;
+
+                /*
                 type            atmBoundaryLayerInletEpsilon;
                 flowDir         (0.8660254037844 0.5 0);
                 zDir            (0 0 1);
@@ -465,13 +558,21 @@ dictionaryReplacement
                 Zref            $windHeight;
                 z0              uniform $z0;
                 zGround         uniform 0.0;
+                */
+
                 value           uniform $epsilon0;
             }
-            */
             north
             {
-                type            zeroGradient;
-                value           uniform 0.1;
+                type            inletOutlet;
+                inletValue      uniform 1e-12;
+
+                /*
+                type            freeStream;
+                freeStreamValue uniform 1e-12;
+                */
+
+                value           uniform 1e-12;
             }
         }
     }

@@ -17,9 +17,9 @@ FoamFile
 
 #include        "../setUp"
 
- 
+
 dimensions      [0 0 0 1 0 0 0];
- 
+
 internalField   uniform $TBottom;
 
 boundaryField
@@ -27,27 +27,48 @@ boundaryField
     lower
     {
         type            zeroGradient;
+        value           uniform $TBottom;
     }
+
     upper
     {
         type            fixedGradient;
         gradient        uniform $TGradUpper;
     }
+
     west
     {
-        type            cyclic;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+        value           uniform $TBottom;
     }
+
     east
     {
-        type            cyclic;
+        type            inletOutlet;
+        inletValue      uniform $TBottom;
+        value           uniform $TBottom;
     }
+
     south
     {
-        type            cyclic;
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+        value           uniform $TBottom;
     }
+
     north
     {
-        type            cyclic;
+        // If reverse flow, use inlet value, otherwise, use zeroGradient
+        type            inletOutlet;
+        inletValue      uniform $TBottom;
+        value           uniform $TBottom;
     }
 }
 

@@ -28,7 +28,7 @@ inflowDir='southwest'                # For inflow/outflow cases, specify the inf
                                 #   'east', 'south', 'west', 'southWest', 'northWest', 'southEast', and
                                 #   'northEast'.  There is a 'cyclic' option too in case you need to change
                                 #    back to cyclic or simply update the number of boundary face entries.
-localRefinementLevels=2         # Number of levels of local refinement (requires system/topoSetDict and
+localRefinementLevels=0         # Number of levels of local refinement (requires system/topoSetDict and
                                 #    system/refineHexMeshDict).
 globalRefinementLevels=0        # Number of levels of global refinement.
 # cores=40                         # Enter the number of cores you will preprocess on.
@@ -99,13 +99,16 @@ cp system/controlDict.1 system/controlDict
 echo "Getting the initial condition directory from the precursor..."
 # Whatever physical time to start with, we start at 0
 rm -rf 0
-rsync -avh $precursorDir/$startTime/{U.gz,T.gz,p_rgh.gz,nuSgs.gz,qwall.gz,Rwall.gz,epsilonTotal.gz,kTotal.gz,kappat.gz} 0/
+rsync -avh $precursorDir/$startTime/{U.gz,T.gz,p_rgh.gz,nuSgs.gz,qwall.gz,epsilonSGS.gz,k.gz,kappat.gz} 0/
 # For RANS, nuSgs becomes nut, so rename it
 mv 0/nuSgs.gz 0/nut.gz
 # Also epsilonTotal becomes epsilon
-mv 0/epsilonTotal.gz 0/epsilon.gz
-# Also kTotal becomes k
-mv 0/kTotal.gz 0/k.gz
+mv 0/epsilonSGS.gz 0/epsilon.gz
+# # Also kTotal becomes k
+# mv 0/kTotal.gz 0/k.gz
+
+# # Copy initial field from 0.origional folder
+# rsync 0.original/* 0/
 
 
 # Build the mesh.
@@ -117,16 +120,18 @@ cp -rf $precursorDir/constant/polyMesh ./constant
 # Get the inflow data linked up.
 echo "Linking the inflow data with this directory..."
 rm -rf constant/boundaryData
-# In ABL solver, averaged boundary data is stored in boundaryDataRANS while
+# In ABL solver, averaged boundary data is stored in boundaryDataRANS_total while
 # timeVaryingMappedFixedValue looks for boundaryData
-ln -s $precursorDir/postProcessing/boundaryDataRANS ./constant/boundaryData
+ln -s $precursorDir/postProcessing/boundaryDataRANS_total ./constant/boundaryData
 
 
 # Get the driving source terms linked up.
 echo "Linking the driving source terms with this directory..."
-# ABLProperties now incl. averaged sources file named sourcesRANS
+# ABLProperties now incl. averaged sources file named sourcesRANS or sources_0
 rm -rf constant/sourcesRANS
 ln -s $precursorDir/postProcessing/sourcesRANS ./constant/
+# ln -s $precursorDir/postProcessing/sources_0 ./constant/sourcesRANS
+
 
 # The initial fields come from the precursor which is periodic on all sides. The turbine
 # case has inflow and outflow. Call the changeDictionary utility to update for inflow/outflow..

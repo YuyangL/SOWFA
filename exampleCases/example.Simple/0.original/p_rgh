@@ -10,16 +10,16 @@ FoamFile
     version     2.0;
     format      ascii;
     class       volScalarField;
-   location    "0000";
+    location    "0";
     object      p_rgh ;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #include        "../setUp"
 
- 
+
 dimensions      [0 2 -2 0 0 0 0];
- 
+
 internalField   uniform $p_rgh0;
 
 boundaryField
@@ -28,25 +28,35 @@ boundaryField
     {
         type            fixedFluxPressure;
     }
+
     upper
     {
         type            fixedFluxPressure;
     }
+
     east
     {
-        type            cyclic;
+        // If reverse flow, use inlet value, otherwise, use zeroGradient
+        type            inletOutlet;
+        inletValue      uniform $p_rgh0;
+        value           uniform $p_rgh0;
     }
+
     west
     {
-        type            cyclic;
+        type            fixedFluxPressure;
     }
+
     south
     {
-        type            cyclic;
+        type            fixedFluxPressure;
     }
+
     north
     {
-        type            cyclic;
+        type            inletOutlet;
+        inletValue      uniform $p_rgh0;
+        value           uniform $p_rgh0;
     }
 }
 

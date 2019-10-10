@@ -10,7 +10,7 @@ FoamFile
     version     2.0;
     format      ascii;
     class       volScalarField;
-   location    "0";
+    location    "0";
     object      k ;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -27,38 +27,74 @@ boundaryField
     lower
     {
         type            kqRWallFunction;  // It's simply zeroGradient
-        value           uniform 0.1;
+        value           uniform 0;
     }
+
     upper
     {
-        type            zeroGradient;
-        value           uniform 0.1;
+        type            slip;
+        value           $internalField;
     }
+
     east
     {
-        type            zeroGradient;
-        value           uniform 0.1;
+        // Since U has inletValue of (0 0 0), k is 0 too
+        type            inletOutlet;
+        inletValue      uniform 0;
+
+        /*
+        type            freeStream;
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletK;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform $k0;
+        }
+        */
+
+        value           uniform 0;
     }
+
     west
     {
         type            timeVaryingMappedFixedValue;
         setAverage      0;
-        perturb          0.0;
+        perturb         0.0;
         offset          0;
-        mapMethod       nearest;
+        mapMethod       planarInterpolation;
+
+        /*
+        type            atmBoundaryLayerInletK;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        Cmu             $Cmu;
+        kappa           $kappa;
+        */
+
+        value           uniform $k0;
+
     }
+
     south
     {
         type            timeVaryingMappedFixedValue;
         setAverage      0;
         perturb         0.0;
         offset          0;
-        mapMethod       nearest;
-    }
+        mapMethod       planarInterpolation;
 
-    /*
-    west
-    {
+        /*
         type            atmBoundaryLayerInletK;
         flowDir         (0.8660254037844 0.5 0);
         zDir            (0 0 1);
@@ -68,27 +104,34 @@ boundaryField
         zGround         uniform 0.0;
         Cmu             $Cmu;
         kappa           $kappa;
+        */
+
         value           uniform $k0;
     }
-    south
-    {
-        type            atmBoundaryLayerInletK;
-        flowDir         (0.8660254037844 0.5 0);
-        zDir            (0 0 1);
-        Uref            $U0Mag;
-        Zref            $windHeight;
-        z0              uniform $z0;
-        zGround         uniform 0.0;
-        Cmu             $Cmu;
-        kappa           $kappa;
-        value           uniform $k0;
-    }
-    */
 
     north
     {
-        type            zeroGradient;
-        value           uniform 0.1;
+        type            inletOutlet;
+        inletValue      uniform 0;
+
+        /*
+        type            freeStream;
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletK;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform $k0;
+        }
+        */
+
+        value           uniform 0;
     }
 }
 

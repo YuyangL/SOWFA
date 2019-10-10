@@ -106,20 +106,20 @@
         incompressible::RASModel::New(U, phi, laminarTransport)
     );
 
-    // Create and read the wall shear stress field
-    Info << "Reading the wall shear stress field, Rwall..." << endl;
-    volSymmTensorField Rwall
-    (
-        IOobject
-        (
-            "Rwall",
-            runTime.timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    );
+    // // Create and read the wall shear stress field
+    // Info << "Reading the wall shear stress field, Rwall..." << endl;
+    // volSymmTensorField Rwall
+    // (
+    //     IOobject
+    //     (
+    //         "Rwall",
+    //         runTime.timeName(),
+    //         mesh,
+    //         IOobject::MUST_READ,
+    //         IOobject::AUTO_WRITE
+    //     ),
+    //     mesh
+    // );
 
     // Create the Reynolds stress field
     // This is simply pre-allocating memory for this field

@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "backwardscompatibilitywallfunctions.h": "c"
+        "backwardscompatibilitywallfunctions.h": "c",
+        "mySteadyBoussinesqSolver3.C": "cpp",
+        "windPlantSolver.C": "cpp"
     }
 }

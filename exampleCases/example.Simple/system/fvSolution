@@ -23,7 +23,7 @@ solvers
         preconditioner
         {
             preconditioner  GAMG;
-            tolerance       1e-05;
+            tolerance       1e-06;
             relTol          0.01;
             smoother        DICGaussSeidel;
             nPreSweeps      0;
@@ -34,8 +34,8 @@ solvers
             agglomerator    faceAreaPair;
             mergeLevels     2;
         }
-        tolerance       1e-07;
-        relTol          0.001;
+        tolerance       1e-06;
+        relTol          0.01;
         maxIter         1000;
     }
 
@@ -47,9 +47,9 @@ solvers
 
     "(U|T|k|epsilon|R)"  // Don't think R is used in solver though
     {
-        solver          PBiCG;
+        solver          PBiCGstab;  // PBiCG;
         preconditioner  DILU;
-        tolerance       1e-6;
+        tolerance       1e-7;
         relTol          0.01;
         maxIter         1000;
     }
@@ -62,7 +62,7 @@ solvers
 
     "(flm|fmm)"
     {
-        solver          PBiCG;
+        solver          PBiCGstab;  // PBiCG;
         preconditioner  DILU;
         tolerance       1e-6;
         relTol          0.01;
@@ -78,6 +78,7 @@ solvers
 
 SIMPLE
 {
+    // The momentum predictor helps in stabilizing the solution as we are computing better approximations for the velocity
     momentumPredictor        yes;
     nNonOrthogonalCorrectors 0;
     pRefCell                 0;
@@ -88,7 +89,7 @@ SIMPLE
     residualControl
     {
         // No relTol needed for SimpleFoam
-        "(U|p_rgh|T|k|epsilon)"          1e-7;
+        "(U|p_rgh|T|k|epsilon)"          1e-8;
     }
 }
 
@@ -97,13 +98,13 @@ relaxationFactors
     // BTW not necessary with SIMPLEC
     fields
     {
-        p_rgh                0.7;
+        p_rgh                0.3;
         p_rghFinal           1.0;
     }
 
     equations
     {
-        "(U|T)"            0.3;
+        "(U|T)"              0.5;
         "(U|T|k|epsilon)Final"       1.0;
         // More relaxed for k and epsilon to be stable
         "(k|epsilon)"        0.5;
