@@ -1,0 +1,115 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    p_rgh
+    {
+        solver          PCG;
+        preconditioner
+        {
+            preconditioner  GAMG;
+            tolerance       1e-06;
+            relTol          0.01;
+            smoother        DICGaussSeidel;
+            nPreSweeps      0;
+            nPostSweeps     2;
+            nFinestSweeps   2;
+            cacheAgglomeration true;
+            nCellsInCoarsestLevel 100;
+            agglomerator    faceAreaPair;
+            mergeLevels     2;
+        }
+        tolerance       1e-06;
+        relTol          0.01;
+        maxIter         1000;
+    }
+
+    p_rghFinal
+    {
+        $p_rgh;
+        relTol          0.0;
+    }
+
+    "(U|T|k|epsilon|R)"  // Don't think R is used in solver though
+    {
+        solver          PBiCG;  // PBiCGStab not supported
+        preconditioner  DILU;
+        tolerance       1e-7;
+        relTol          0.01;
+        maxIter         1000;
+    }
+
+    "(U|T|k|epsilon|R)Final"
+    {
+        $U;
+        relTol          0.0;
+    }
+
+    "(flm|fmm)"
+    {
+        solver          PBiCG;
+        preconditioner  DILU;
+        tolerance       1e-6;
+        relTol          0.01;
+    }
+
+    "(flm|fmm)Final"
+    {
+        $flm;
+        relTol          0.0;
+    }
+}
+
+
+SIMPLE
+{
+    // The momentum predictor helps in stabilizing the solution as we are computing better approximations for the velocity
+    momentumPredictor        yes;
+    nNonOrthogonalCorrectors 0;
+    pRefCell                 0;
+    pRefValue                0;
+    // SIMPLEC only available from OF 3.0+
+    // consistent               yes;
+
+    residualControl
+    {
+        // No relTol needed for SimpleFoam
+        "(U|p_rgh|T|k|epsilon)"          1e-8;
+    }
+}
+
+relaxationFactors
+{
+    // BTW not necessary with SIMPLEC
+    fields
+    {
+        p_rgh                0.3;
+        p_rghFinal           1.0;
+    }
+
+    equations
+    {
+        "(U|T)"              0.5;
+        "(U|T|k|epsilon)Final"       1.0;
+        // More relaxed for k and epsilon to be stable
+        "(k|epsilon)"        0.5;
+    }
+}
+
+
+// ************************************************************************* //

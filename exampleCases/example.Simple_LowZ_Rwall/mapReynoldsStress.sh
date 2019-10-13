@@ -3,7 +3,7 @@
 # Requires 1 argument: [source directory]
 
 if [[ $# -eq 0 ]] ; then
-    echo 'Source dir is are required as arg!'
+    echo 'Source dir is required as arg!'
     exit 0
 fi
 

@@ -180,12 +180,13 @@ dictionaryReplacement
         {
             lower
             {
-                type            kqRWallFunction;  // It's simply zeroGradient
+                // lower is 0 since R is taken care of by Rwall
+                type            fixedValue;  // kqRWallFunction;  // It's simply zeroGradient
                 value           uniform 0;
             }
             upper
             {
-                type            zeroGradient;  // slip;
+                type            zeroGradient;
                 value           uniform $k0;
             }
             east
@@ -337,9 +338,8 @@ dictionaryReplacement
         {
             lower
             {
-                // Should ensure y+ > 30 and 1st CCZ > 50z0 when using
-                type                nutkAtmRoughWallFunction;
-                z0                  uniform $z0;
+                // 0 since it's taken care of by Rwall
+                type                fixedValue;
 
                 /*
                 // nutkAtmRoughWallFunction might be better
@@ -349,7 +349,7 @@ dictionaryReplacement
                 Cs              uniform $Cs;  // Cs = E/Ks*z0 with E = 9.73
                 */
 
-                value           uniform $nuSgs0;
+                value           uniform 0;
             }
             upper
             {
@@ -435,11 +435,22 @@ dictionaryReplacement
         }
     }
 
-    // TODO: Not used since nut wall function take its place. Could use Rwall instead of nut wall function?
     Rwall
     {
         boundaryField
         {
+            // Only lower is non-zero
+            lower
+            {
+                type            SchumannGrotzbach;
+                kappa           $kappa;
+                z0              uniform $z0;
+                betaM           $betaM;
+                gammaM          $gammaM;
+                averageType     "local";
+                //averageType     "planarAverage";
+                value           uniform $Rwall;
+            }
             south
             {
                 type            fixedValue;
@@ -476,7 +487,7 @@ dictionaryReplacement
             }
             upper
             {
-                type            zeroGradient;  // slip;
+                type            zeroGradient;
 
                 /*
                 // If reverse flow, use inflow BC profile, otherwise, use zeroGradient

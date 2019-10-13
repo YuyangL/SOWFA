@@ -1,0 +1,100 @@
+sliceDataInstantaneous
+{
+    type                 surfaces;
+    functionObjectLibs   ("libsampling.so");
+    enabled              true;
+    interpolationScheme  cellPoint;
+    outputControl        adjustableTime;
+    writeInterval        50;
+    surfaceFormat        raw;
+
+    fields
+    (
+      U
+      T
+    );
+
+    // For two turbines, downwind turbine directly behind upwind turbine, no yaw, no offset
+    surfaces
+    (
+        // Horizontal slice at hub height of 90 m
+        hubHeight_Slice
+        {
+            type            plane;
+            basePoint       (1500.01 1500.01 90.01); // Added perturbation to avoid "walking" error
+            normalVector    (0 0 1);
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+
+        // Horizontal slice at ground surface
+        groundHeight_Slice
+        {
+            type            plane;
+            basePoint       (1500.01 1500.01 0.01); // Added perturbation to avoid "walking" error
+            normalVector    (0 0 1);
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+
+        // Horizontal slice at turbine apex (63 + 90 = 153 m)
+        turbineApex_Slice
+        {
+            type            plane;
+            basePoint       (1500.01 1500.01 153.01); // Added perturbation to avoid "walking" error
+            normalVector    (0 0 1);
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+
+        // Vertical slice along wind (30 deg counter-clockwise from x) (also passes turbine center)
+        alongWind_Slice
+        {
+            type            plane;
+            basePoint       (1500.01 1500.01 0.01); // Added perturbation to avoid "walking" error
+            normalVector    (0.5 -0.866 0); // 60 deg clockwise from x
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+
+        // Vertical slice 2D upstream rotor plane
+        twoDupstreamTurbineOne_Slice
+        {
+            type            plane;
+            basePoint       (899.844 1153.5 0.01); // Added perturbation to avoid "walking" error
+            normalVector    (0.866 0.5 0); // 30 deg counter-clockwise from x
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+
+        // Vertical slice in rotor plane
+        rotorPlaneOne_Slice
+        {
+            type            plane;
+            basePoint       (1118.083 1279.5 0.01); // Added perturbation to avoid "walking" error
+            normalVector    (0.866 0.5 0); // 30 deg counter-clockwise from x
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+
+        // Vertical slice 1D downstream rotor plane
+        oneDdownstreamTurbineOne_Slice
+        {
+            type            plane;
+            basePoint       (1227.202 1342.5 0.01); // Added perturbation to avoid "walking" error
+            normalVector    (0.866 0.5 0); // 30 deg counter-clockwise from x
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+        
+        // Vertical slice 3D downstream rotor plane
+        threeDdownstreamTurbineOne_Slice
+        {
+            type            plane;
+            basePoint       (1445.44  1468.5 0.01); // Added perturbation to avoid "walking" error
+            normalVector    (0.866 0.5 0); // 30 deg counter-clockwise from x
+            triangulate	    false;
+            interpolate     true; // True so point value saved
+        }
+    );
+}
