@@ -328,6 +328,11 @@ void kEpsilonABL::computeMaxLengthScale()
     dimensionedScalar d("d",dimVelocity,max(denominator,1.0E-10));
 
     lmax_ = Clambda_ * (n/d);
+
+    if (mix_verbose_.value() > 1)
+    {
+        Info << "Max length scale from k is " << lmax_.value() << " m" << endl;
+    }
 }
 
 // // This is Reynolds stress from k-epsilon model
@@ -485,14 +490,14 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
         mix_ratio_cap_.value());
     }
 
-    if (mix_verbose_.value() > 1)
-    {
-        scalar nu_min = min(nu());
-        scalar nu_max = max(nu());
-        reduce(bij_min, minOp<scalar>());
-        reduce(bij_max, maxOp<scalar>());
-        Info << "Min LES/ML bij is " << bij_min << "; max is " << bij_max << endl;
-    }
+    // if (mix_verbose_.value() > 1)
+    // {
+    //     scalar bij_min = min(cmptMin(bij_));
+    //     scalar bij_max = max(cmptMax(bij_));
+    //     reduce(bij_min, minOp<scalar>());
+    //     reduce(bij_max, maxOp<scalar>());
+    //     Info << "Min LES/ML bij is " << bij_min << "; max is " << bij_max << endl;
+    // }
 
     return
     (
@@ -550,6 +555,7 @@ bool kEpsilonABL::read()
 
 void kEpsilonABL::correct()
 {
+    // Correct laminar viscosity nu if necessary
     RASModel::correct();
 
     if (!turbulence_)
@@ -580,6 +586,13 @@ void kEpsilonABL::correct()
             reduce(bij_min, minOp<scalar>());
             reduce(bij_max, maxOp<scalar>());
             Info << "Min LES/ML bij is " << bij_min << "; max is " << bij_max << endl;
+
+            scalar nut_min = min(nut_).value();
+            scalar nut_max = max(nut_).value();
+            reduce(nut_min, minOp<scalar>());
+            reduce(nut_max, maxOp<scalar>());
+            scalar nut_avg = nut_.weightedAverage(mesh_.V()).value();
+            Info << "Min nut is " << nut_min << "; max is " << nut_max << "; wighted mean is " << nut_avg << endl;
         }
     }
 
@@ -639,6 +652,15 @@ void kEpsilonABL::correct()
     // Compute the buoyancy production term, should be 0 for neutral ABL below inversion layer
     // TODO: this is untouched from LES data but could inject T'T' here too
     volScalarField B("kEpsilonABL:B",(1.0/TRef_)*g_&((nut_/Prt_)*fvc::grad(T_)));
+    if (mix_verbose_.value() > 1)
+    {
+        scalar b_min = min(B).value();
+        scalar b_max = max(B).value();
+        reduce(b_min, minOp<scalar>());
+        reduce(b_max, maxOp<scalar>());
+        scalar b_avg = B.weightedAverage(mesh_.V()).value();
+        Info << "Min B is " << b_min << "; max is " << b_max << "; wighted mean is " << b_avg << endl;
+    }
 
     // Compute the local gradient Richardson number.
     volScalarField Ri = -B/G;
@@ -655,15 +677,31 @@ void kEpsilonABL::correct()
             alphaB_[i] = 1.0 - (1.0 + (Ceps2_.value() - 1.0) / (Ceps2_.value() - Ceps1_.value())) * lm_[i]/lmax_.value();
         }
     }
+    if (mix_verbose_.value() > 2)
+    {
+        Info << "alphaB calculated" << endl;
+    }
 
     // Compute Ceps1Star.
     Ceps1Star_ = Ceps1_ + (Ceps2_ - Ceps1_)*(lm_/lmax_);
+    if (mix_verbose_.value() > 2)
+    {
+        Info << "Ceps1 calculated" << endl;
+    }
 
     // Compute Ceps3
     Ceps3_ = (Ceps1_ - Ceps2_)*alphaB_ + 1.0;
+    if (mix_verbose_.value() > 2)
+    {
+        Info << "Ceps3 calculated" << endl;
+    }
 
     // Update epsilon and G at the wall
     epsilon_.boundaryField().updateCoeffs();
+    if (mix_verbose_.value() > 2)
+    {
+        Info << "epsilon boundary field updated" << endl;
+    }
 
     // Dissipation equation
     tmp<fvScalarMatrix> epsEqn

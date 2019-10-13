@@ -2,6 +2,8 @@
     "files.associations": {
         "backwardscompatibilitywallfunctions.h": "c",
         "mySteadyBoussinesqSolver3.C": "cpp",
-        "windPlantSolver.C": "cpp"
+        "windPlantSolver.C": "cpp",
+        "kEpsilonABL.C": "cpp",
+        "timeVaryingMappedInletOutletFvPatchField.C": "cpp"
     }
 }

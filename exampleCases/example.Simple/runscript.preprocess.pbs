@@ -3,7 +3,7 @@
 #PBS -o log.N_H_1T_SMP_Blend_Pre.${PBS_JOBID}
 #PBS -N N_H_1T_SMP_Blend_Pre
 #PBS -l walltime=01:00:00
-#PBS -l nodes=2:ppn=20
+#PBS -l nodes=1:ppn=32
 #PBS -A windsim
 #PBS -m abe
 #PBS -M y.luan@student.tudelft.nl

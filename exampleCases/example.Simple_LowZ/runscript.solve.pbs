@@ -1,0 +1,163 @@
+#!/bin/bash
+#PBS -j oe
+#PBS -o log.N_H_1T_SMP_Blend.${PBS_JOBID}
+#PBS -N N_H_1T_SMP_Blend
+#PBS -l walltime=24:00:00
+#PBS -l nodes=1:ppn=32:ib  # :typeiMP
+#PBS -A windsim
+#PBS -m abe
+#PBS -M y.luan@student.tudelft.nl
+
+#################
+# User Inputs
+#################
+# # StopAction kicks in at the last $sleepUntil sec to enable writeNow in system/controlDict
+# sleepUntil=1800  # [s]
+# # Simulation endTime in (not in system/controlDict)
+# endTime=25000  # [s]
+
+# Whether move work dir to nodes to speed up data access
+# Only useful if frequent data storage
+moveWORKDIR=0  # 0, 1
+
+
+#################
+# Process User Inputs
+#################
+# # Stop script in case of error
+# set -e
+echo Job started on `uname -n` at `date`
+
+# Load OpenFOAM environment
+# shopt -s expand_aliases
+# source $HOME/SOWFA/.bash_profile
+module load openfoam/2.4.0
+
+# If move working dir to local nodes
+if (( $moveWORKDIR==1 )); then
+    # Create a temporary directory in /var/tmp
+    TMP=/var/tmp/${PBS_JOBID}
+    mkdir -p ${TMP}
+    echo "Temporary work dir: ${TMP}"
+    if [ ! -d "${TMP}" ]; then
+        echo "Cannot create temporary directory. Disk probably full."
+        exit 1
+    fi
+
+    # Copy the input files to ${TMP}
+    echo "Copying from ${PBS_O_WORKDIR}/ to ${TMP}/"
+    /usr/bin/rsync -vax "${PBS_O_WORKDIR}/" ${TMP}/
+    cd ${TMP}
+    echo "Working direcrory: " $TMP
+else
+    cd $PBS_O_WORKDIR
+    echo "Working directory: " $PBS_O_WORKDIR
+fi
+
+# # Write the result of the current time step when $sleepUntil sec left of wall time
+# # & means running in background
+# ./StopAction $sleepUntil &
+
+# touch ./${PBS_JOBID}.txt
+initializer=setFieldsABL
+# Solver choice
+solver=windPlantSimpleSolver
+
+# Find the latestTime by looking at the processor0 folder
+latestTimeInt=`exec ls ./processor0 | sed 's/\([0-9]\+\).*/\1/g' | sort -n | tail -1`
+latestTime=`exec ls ./processor0 | sed 's/\([0-9]*\.[0-9]*\)/\1/g' | sort -n | tail -1`
+
+# Check for latest simulation time
+# (()) is true or false in C
+# Bash only supports integer arithmetic
+if (( $latestTimeInt>0 )); then
+    echo "This is a resume run from " $latestTime " s"
+    # Find runNumber by looking through log files
+    # Look for log.[0-9] files, only keep [0-9], cut the characters other than the first,
+    # sort from low to high, get the last, +1 using $(())
+    # [LIMITATION] Only works for Njobs < 10, job number < 2\+
+    runNumber=$((`exec ls | sed 's/log\.\([0-9]\).*/\1/g' | cut -b1 | sort -n| tail -1` + 1))
+    # Make sure startFrom is latestTime
+    sed -i 's/startFrom\s.*/startFrom    latestTime;/' ./system/controlDict
+# For windPlantSolver.ALM, latest time shouldn't be 0, thus echo warning
+else
+    echo "Time folder in processor*/ not > 0! Something is wrong!"
+    runNumber=1
+    # Make sure startFrom is startTime=0
+    sed -i 's/startFrom\s.*/startFrom    startTime;/' ./system/controlDict
+fi
+
+# # Make sure stopAt is endTime instead of writeNow
+# sed -i 's/stopAt\s.*/stopAt    endTime;/' ./system/controlDict
+# # Make sure endTime is larger than $endTime
+# # so that the actual end time can be saved when stopAt becomes writeNow
+# let fakeEndTime=endTime+10
+# sed -i "s/endTime\s.*/endTime    ${fakeEndTime};/" ./system/controlDict
+
+
+#################
+# Run OpenFOAM in Parallel
+#################
+echo "Starting OpenFOAM job at: " $(date)
+# echo "using " $cores " cores"
+
+# Run the flow field initializer (parallel), not applicable to windPlantSolver.ALM
+if [ $runNumber -eq 100000 ]
+    then
+    which $initializer
+    # cp $PBS_O_WORKDIR/system/controlDict.$runNumber $PBS_O_WORKDIR/system/controlDict
+    # echo 'Decomposing the domain...'
+    # decomposePar -cellDist -force  > log.$runNumber.decomposePar 2>&1
+
+    # # Renumber mesh in mpi parallel for better sync
+    # # mpirun -np $cores renumberMesh -parallel -overwrite > log.renumberMesh 2>&1
+    # mpirun --hostfile $PBS_NODEFILE renumberMesh -parallel -overwrite > log.renumberMesh 2>&1
+
+    # # Check mesh quality
+    # # mpirun -np $cores checkMesh -parallel > log.checkMesh 2>&1
+    # mpirun --hostfile $PBS_NODEFILE checkMesh -parallel > log.checkMesh 2>&1
+
+    # Initialize the field
+    # mpirun -np $cores $initializer -parallel > log.$runNumber.$initializer 2>&1
+    mpirun --hostfile $PBS_NODEFILE $initializer -parallel > log.$runNumber.$initializer 2>&1
+    echo 'Finished setting fields'
+    # runNumber=2
+fi
+
+# Create solver log with run number of maximum 10
+touch log.$runNumber.$solver
+
+# # Run a script to check whether simulation reaches targeted endTime, if so,
+# # change stopAt to writeNow and end run, this script is run in background
+# ./checkTargetEndTime.sh $runNumber $endTime $solver &
+
+# Run the solver (parallel)
+which $solver
+echo "Running " $solver
+# mpirun -np $cores $solver -parallel > log.$runNumber.$solver 2>&1
+# Use --hostfile for multiple nodes instead of just multiple cores in 1 node
+mpirun --hostfile $PBS_NODEFILE $solver -parallel > log.$runNumber.$solver 2>&1
+
+
+# #################
+# #  Postprocess
+# #################
+# # If target time not reached but wall time is up,
+# # then checkTargetEndTime has already changed stopAt from endTime to writeNow to save the last progress.
+# # Therefore, reverse writeNow to endTime for next run
+# echo "OpenFOAM run reached wall time, reversing stopAt from writeNow to endTime"
+# # \s means any number of tab or space
+# # .* means find pattern that starts with startAt, don't care what's after
+# # in the same line
+# sed -i 's/stopAt\s.*/stopAt    endTime;/' ./system/controlDict
+
+# For data stored at local nodes, transfer it back
+if (( $moveWORKDIR==1 )); then
+    # Job done, copy everything back
+    echo "Copying from ${TMP}/ to ${PBS_O_WORKDIR}/"
+    /usr/bin/rsync -vax ${TMP}/ "${PBS_O_WORKDIR}/"
+    # Delete my temporary files
+    [ $? -eq 0 ] && /bin/rm -rf ${TMP}
+fi
+
+echo "Ending OpenFOAM job at: " $(date)

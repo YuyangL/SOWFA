@@ -39,7 +39,7 @@ boundaryField
 
     upper
     {
-        type slip;
+        type            slip;
         value           $internalField;
     }
 
@@ -50,7 +50,7 @@ boundaryField
         perturb         0.0;
         offset          (0 0 0);
         mapMethod       planarInterpolation;
-        value           uniform ($U0Mag 0 0);
+        value           uniform (0 0 0);
     }
 
     east
@@ -72,11 +72,11 @@ boundaryField
             zGround         uniform 0.0;
             Cmu             $Cmu;
             kappa           $kappa;
-            value           uniform ($U0Mag 0 0);  // Don't think this is used;
+            value           uniform (0 0 0);  // Don't think this is used;
         }
         */
 
-        value           $internalField;
+        value           uniform (0 0 0);
     }
 
     south
@@ -86,7 +86,7 @@ boundaryField
         perturb         0.0;
         offset          (0 0 0);
         mapMethod       planarInterpolation;
-        value           uniform ($U0Mag 0 0);
+        value           uniform (0 0 0);
     }
 
     north
@@ -109,11 +109,11 @@ boundaryField
             zGround         uniform 0.0;
             Cmu             $Cmu;
             kappa           $kappa;
-            value           uniform ($U0Mag 0 0);  // Don't think this is used;
+            value           uniform (0 0 0);  // Don't think this is used;
         }
         */
 
-        value           $internalField;
+        value           uniform (0 0 0);
     }
 }
 

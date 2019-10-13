@@ -134,7 +134,7 @@ dictionaryReplacement
                 }
                 */
 
-                value           uniform (0 0 0);
+                value           uniform ($U0Mag 0 0);
             }
             south
             {
@@ -169,7 +169,7 @@ dictionaryReplacement
                 }
                 */
 
-                value           uniform (0 0 0);
+                value           uniform ($U0Mag 0 0);
             }
         }
     }
@@ -211,7 +211,7 @@ dictionaryReplacement
                 }
                 */
 
-                value           uniform 0;
+                value           uniform $k0;
             }
             west
             {
@@ -280,7 +280,7 @@ dictionaryReplacement
                 }
                 */
 
-                value           uniform 0;
+                value           uniform $k0;
             }
         }
     }
@@ -299,10 +299,9 @@ dictionaryReplacement
                 kappat          $kappa;
                 E               $E;
 
-                /*
-                type            fixedValue;
+                // type            fixedValue;
+
                 value           uniform 0.0;
-                */
             }
             upper
             {
@@ -516,7 +515,7 @@ dictionaryReplacement
                 freeStreamValue uniform 1e-12;
                 */
 
-                value           uniform 1e-12;
+                value           uniform $epsilon0;
             }
             west
             {
@@ -572,7 +571,7 @@ dictionaryReplacement
                 freeStreamValue uniform 1e-12;
                 */
 
-                value           uniform 1e-12;
+                value           uniform $epsilon0;
             }
         }
     }

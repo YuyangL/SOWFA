@@ -24,7 +24,7 @@ ddtSchemes
 gradSchemes
 {
     // Limits the gradient such that when cell values are extrapolated to faces using the calculated gradient, the face values do not fall outside the bounds of values in surrounding cells. A limiting coefficient is specified after the underlying scheme for which 1 guarantees boundedness
-    default                        cellMDLimited Gauss linear 0.5;
+    default                        cellMDLimited Gauss linear 1;
     grad(U)                        cellMDLimited Gauss linear 1;
     grad(k)                        cellMDLimited Gauss linear 1;
     grad(epsilon)                  cellMDLimited Gauss linear 1;
@@ -33,14 +33,14 @@ gradSchemes
 divSchemes
 {
     // phi is div(U)
-    default                        bounded Gauss linear;
+    default                        Gauss linear;
     // Sometmes pure linear differencing, which provides no artificial diffusion, causes instability, so a blend of linear plus a small amount of upwind is used
     div(phi,U)                     bounded Gauss localBlended linear upwind;
     div(phi,T)                     bounded Gauss localBlended linear upwind;
-    div(R)                         bounded Gauss linear;
-    div(U)                         bounded Gauss linear;
-    div((nuEff*dev(grad(U).T())))  bounded Gauss linear;
-    div(B)                         bounded Gauss linear;
+    div(R)                         Gauss linear;
+    div(U)                         Gauss linear;
+    div((nuEff*dev(grad(U).T())))  Gauss linear;
+    div(B)                         Gauss linear;
     div(phi,B)                     bounded Gauss linear;
     // upwind interpolation for better convergence
     div(phi,k)                     bounded Gauss upwind;
