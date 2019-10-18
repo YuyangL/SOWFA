@@ -4,6 +4,13 @@
         "mySteadyBoussinesqSolver3.C": "cpp",
         "windPlantSolver.C": "cpp",
         "kEpsilonABL.C": "cpp",
-        "timeVaryingMappedInletOutletFvPatchField.C": "cpp"
+        "timeVaryingMappedInletOutletFvPatchField.C": "cpp",
+        "calcTurbulenceFields.C": "cpp",
+        "calcTurbulenceProductionField.C": "cpp",
+        "calcDivRField.C": "cpp",
+        "oneEqEddyABL.C": "cpp",
+        "GenEddyViscABL.C": "cpp",
+        "calcAnisotropyTensorField.C": "cpp",
+        "calcDivDevRField.C": "cpp"
     }
 }

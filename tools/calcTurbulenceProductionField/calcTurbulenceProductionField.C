@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
                 mesh
             );
 
-            Info<< "Reading mean velocity field, UAvg\n" << endl;
+            Info<< "Reading mean resolved Reynolds stress field, uuPrime2\n" << endl;
             volSymmTensorField uuPrime2
             (
                 IOobject

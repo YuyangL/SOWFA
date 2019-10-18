@@ -1,0 +1,227 @@
+#!/bin/bash
+#PBS -j oe
+#PBS -o log.N_H_ParT_SMP_Blend_Pre.${PBS_JOBID}
+#PBS -N N_H_ParT_SMP_Blend_Pre
+#PBS -l walltime=01:00:00
+#PBS -l nodes=1:ppn=20:ib
+#PBS -A windsim
+#PBS -m abe
+#PBS -M y.luan@student.tudelft.nl
+
+# Precursor dir
+precursorDir=/home/yluan/ABL_N_H/
+# Wind turbine directory, for LES bij only
+lesDir=/home/yluan/scratch/ALM_N_H_ParallelTurbine2/
+
+
+echo Job started on `uname -n` at `date`
+
+
+# User Input.
+OpenFOAMversion=2.4.0   # OpenFOAM version
+
+# Read the time folder string in precursor directory which is a float
+startTime=`exec ls $precursorDir | sed 's/\([0-9]*\.[0-9]*\)/\1/g' | sort -g | tail -1`                 # Start time
+
+updateBCType=1                  # Boolean for whether or not the boundary condition types will be updated over
+                                #    what is in the initial conditions files. Leave it 0 for precursors.
+inflowDir='southwest'                # For inflow/outflow cases, specify the inflow direction.  Choices are 'west',
+                                #   'east', 'south', 'west', 'southWest', 'northWest', 'southEast', and
+                                #   'northEast'.  There is a 'cyclic' option too in case you need to change
+                                #    back to cyclic or simply update the number of boundary face entries.
+localRefinementLevels=0         # Number of levels of local refinement (requires system/topoSetDict and
+                                #    system/refineHexMeshDict).
+globalRefinementLevels=0        # Number of levels of global refinement.
+# cores=20                        # Enter the number of cores you will preprocess on.
+parallel=0
+
+
+# Define some functions for mesh refinement.
+# Local refinement performed on one core.
+refineMeshLocal()
+{
+   i=$1
+   while [ $i -ge 1 ]
+   do
+      echo "   -Performing level $i local refinement with topoSet/refineHexMesh"
+      echo "      *selecting cells to refine..."
+      topoSet -dict system/topoSetDict.local.$i > log.topoSet.local.$i 2>&1
+
+      echo "      *refining cells..."
+      refineHexMesh local -overwrite > log.refineHexMesh.local.$i 2>&1
+
+      # Only 1 refinement
+      let i=i-2
+
+   done
+}
+
+# Global refinement performed in parallel.
+refineMeshGlobal()
+{
+   i=1
+   while [ $i -le $1 ]
+   do
+      echo "   -Performing level $i global refinement with refineMesh"
+      echo "      *refining cells..."
+      # mpirun -np $cores refineMesh -parallel -overwrite > log.refineMesh.global.$i 2>&1
+      mpirun --hostfile $PBS_NODEFILE refineMesh -parallel -overwrite > log.refineMesh.gloabl.$i 2>$1
+
+      let i=i+1
+   done
+}
+
+
+# If running in parallel, cd to job launch directory
+# if [ $cores -gt 1 ]
+if [ $parallel -eq 1 ]
+   then
+   cd $PBS_O_WORKDIR
+fi
+
+
+# 1. Source the bash profile and then call the appropriate OpenFOAM version function
+# so that all the modules and environment variables get set.
+echo "1. Sourcing the bash profile, loading modules, and setting the OpenFOAM environment variables..."
+# source $HOME/SOWFA/.bash_profile
+# OpenFOAM-$OpenFOAMversion
+module load openfoam/$OpenFOAMversion
+
+
+# 2. Copy the controlDict.1 (assuming this is the one the actual solver will start
+# out with) to controlDict.  OpenFOAM reads "controlDict", not the numbered ones.
+echo "2. Getting the control dictionary ready..."
+cp system/controlDict.1 system/controlDict
+# # Change startTime to $startTime in controlDict
+# # \s means white space
+# sed -i "s/startTime\s.*/startTime    $startTime;/" ./system/controlDict
+
+
+# # Copy initial field from precursor or 0.original to 0
+# echo "Getting the initial condition directory from the precursor..."
+# # Whatever physical time to start with, we start at 0
+# rm -rf 0
+# rsync -avh $precursorDir/$startTime/{U.gz,T.gz,p_rgh.gz,nuSgs.gz,qwall.gz,epsilonSGS.gz,k.gz,kappat.gz} 0/
+# # For RANS, nuSgs becomes nut, so rename it
+# mv 0/nuSgs.gz 0/nut.gz
+# # Also epsilonTotal becomes epsilon
+# mv 0/epsilonSGS.gz 0/epsilon.gz
+# # # Also kTotal becomes k
+# # mv 0/kTotal.gz 0/k.gz
+#
+# # Copy initial field from 0.origional folder
+# rsync 0.original/* 0/
+
+
+# 3. Build the mesh.
+# echo "Copy the the base mesh from the precursor..."
+# rm -rf constant/polyMesh
+# cp -rf $precursorDir/constant/polyMesh ./constant
+echo "3. Building mesh..."
+cp system/blockMeshDict ./
+rm -rf constant/polyMesh/*
+mv ./blockMeshDict constant/polyMesh
+blockMesh > log.blockMesh 2>&1
+
+
+# 4. Do serial local refinement
+echo "4. Using refineHexMesh to perform " $localRefinementLevels " of local refinement..."
+refineMeshLocal $localRefinementLevels
+
+
+# 5. Copy then map initial fields from precursor to current (coarser) mesh
+echo "5. Copying and mapping U, T, p_rgh, qwall, Rwall, k, epsilonSGS, nuSgs from ${precursorDir}/${startTime} as initial field..."
+rm -rf 0
+# Copy then map U, T, p_rgh, qwall, Rwall, k, epsilonSGS, nuSgs
+# Requires precursor dir and the time in precursor to copy
+# k*, epsilon*, and nu* will be renamed to k, epsilon, and nut
+mapAllFields.sh $precursorDir $startTime > log.mapAllFields 2>&1
+
+
+# 6. Get the inflow data linked up.
+echo "6. Linking the inflow data with this directory..."
+rm -rf constant/boundaryData
+# In ABL solver, averaged boundary data is stored in boundaryDataRANS_total while
+# timeVaryingMappedFixedValue looks for boundaryData
+ln -s $precursorDir/postProcessing/boundaryDataRANS_total ./constant/boundaryData
+
+
+# 7. Get the driving source terms linked up.
+echo "7. Linking the driving source terms with this directory..."
+# ABLProperties now incl. averaged sources file named sourcesRANS or sources_0
+rm -rf constant/sourcesRANS
+ln -s $precursorDir/postProcessing/sourcesRANS ./constant/
+# ln -s $precursorDir/postProcessing/sources_0 ./constant/sourcesRANS
+
+
+# 8. The initial fields come from the precursor which is periodic on all sides. The turbine
+# case has inflow and outflow. Call the changeDictionary utility to update for inflow/outflow..
+# Again, time in RANS starts at 0
+if [ $updateBCType -eq 1 ]
+   then
+   echo "8. Using changeDictionary to update boundary conditions..."
+   changeDictionary -dict system/changeDictionaryDict.updateBCs.$inflowDir -time 0 -enableFunctionEntries > log.changeDictionary.updateBCs.$inflowDir.1 2>&1
+fi
+
+
+# 9. Map bij fields from LES to this mesh, the BC of bij from LES is untouched
+echo "9. Creating bij in ${lesDir} if not already and mapping it to this mesh grid..."
+mapReynoldsStress.sh $lesDir > log.mapReynoldsStress 2>&1
+
+
+# If running in paralle from this point forward, then do the following:
+# if [ $cores -gt 1 ]
+if [ $parallel -eq 1 ]
+   then
+   # 10. Decompose the mesh and solution files (serial)
+   echo "10. Using decomposePar to decompose the problem for parallel processing..."
+   # Starts at time 0 in RANS
+   decomposePar -cellDist -force -time 0 > log.decomposePar 2>&1
+
+   # 11. Check the mesh
+   echo "11. Running checkMesh to report mesh diagnostics..."
+   # mpirun -np $cores checkMesh -parallel > log.checkMesh.1 2>&1
+   mpirun --hostfile $PBS_NODEFILE checkMesh -parallel > log.checkMesh.1 2>&1
+
+   # 12. Perform global refinement to desired resolution.
+   echo "12. Using refineMesh to perform " $globalRefinementLevels " of global refinement..."
+   refineMeshGlobal $globalRefinementLevels
+
+   # 12.1. The mesh got globally refined, but the solution file did not, so
+   # the boundary fields may not have the correct number of entries.
+   # Use the changeDictionary utility to overwrite the spatially varying
+   # boundary data to a uniform single value.
+   if [ $updateBCType -eq 1 ] && [ $globalRefinementLevels -gt 0 ]
+      then
+      echo "12.1 Using changeDictionary to ensure that the boundaries have the correct number of faces..."
+      # mpirun -np $cores changeDictionary -dict system/changeDictionaryDict.updateBCs.$inflowDir -time $startTime -enableFunctionEntries -parallel > log.changeDictionary.updateBCs.$inflowDir.1 2>&1
+      # Starts at time 0 in RANS
+      mpirun --hostfile $PBS_NODEFILE changeDictionary -dict system/changeDictionary.updateBCs.$inflowDir -time 0 -enableFunctionEntries -parallel > log.changeDictionary.updateBCs.$inflowDir.2 2>&1
+   fi
+
+   # 13. Renumber the mesh for better matrix solver performance.
+   echo "13. Using renumberMesh to renumber the mesh for better matrix conditioning..."
+   # mpirun -np $cores renumberMesh -parallel -overwrite -time $startTime > log.renumberMesh 2>&1
+   # Starts at time 0 in RANS
+   mpirun --hostfile $PBS_NODEFILE renumberMesh -parallel -overwrite -time 0 > log.renumberMesh 2>&1
+
+   # 14. Do one last check on the mesh.
+   echo "14. Running checkMesh to report mesh diagnostics..."
+   # mpirun -np $cores checkMesh -parallel > log.checkMesh.2 2>&1
+   mpirun --hostfile $PBS_NODEFILE checkMesh -parallel > log.checkMesh.2 2>&1
+
+
+# Otherwise, run in serial as follows:
+else
+   # 10. Renumber the mesh.
+   echo "10. Using renumberMesh to renumber the mesh for better matrix conditioning..."
+   renumberMesh -overwrite -time 0 > log.renumberMesh 2>&1
+
+   # 11. Decompose the mesh and solution files (serial)
+   echo "11. Using decomposePar to decompose the problem for parallel processing..."
+   decomposePar -cellDist -force -time 0 > log.decomposePar 2>&1
+
+   # 12. Check the mesh.
+   echo "12. Running checkMesh to report mesh diagnostics..."
+   checkMesh > log.checkMesh.1 2>&1
+fi

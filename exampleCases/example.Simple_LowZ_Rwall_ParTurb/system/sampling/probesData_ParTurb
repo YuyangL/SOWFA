@@ -1,0 +1,46 @@
+probes
+{
+functionObjectLibs  ("libsampling.so");
+
+type                probes;
+name                probes_ParTurb;
+
+outputControl       adjustableTime;  // timeStep;
+// If adjustableTime, use writeInterval that writes every writeInterval s of simulation time
+writeInterval       50;
+// // If timeStep, use outputInterval instead
+// outputInterval    28;  // 0.036 s per timestep then 28 timesetps per s
+
+// Fields to be probed. runTime (NOT?) modifiable!
+fields
+(
+    UAvg
+    uuPrime2
+);
+
+// Locations to be probed. runTime (NOT?) modifiable!
+// For the case of parallel turbines 3D apart
+probeLocations
+(
+    (916.725 872.262 90  )  // 3D upstream southern turbine at hub height
+    (664.725 1308.738 90)   // 3D upstream northern turbine at hub height
+
+    (1134.964 998.262 90)   // 1D upstream southern turbine at hub height
+    (882.964 1434.738 90)   // 1D upstream northern turbine at hub height
+
+    (1353.202 1124.262 90)  // 1D downstream southern turbine at hub height
+    (1353.202 1124.262 153) // 1D downstream southern turbine at turbine apex
+    (1101.202 1560.738 90)  // 1D downstream northern turbine at hub height
+    (1101.202 1560.738 153) // 1D downstream northern turbine at turbine apex
+
+    (1462.321 1187.262 90)  // 2D downstream southern turbine at hub height
+    (1462.321 1187.262 153) // 2D downstream southern turbine at turbine apex
+    (1210.321 1623.738 90)  // 2D downstream northern turbine at hub height
+    (1210.321 1623.738 153) // 2D downstream northern turbine at turbine apex
+
+    (1680.56 1313.26 90)    // 4D downstream southern turbine at hub height
+    (1680.56 1313.26 153)   // 4D downstream southern turbine at turbine apex
+    (1428.56 1749.738 90)   // 4D downstream northern turbine at hub height
+    (1428.56 1749.738 153)  // 4D downstream northern turbine at turbine apex
+);
+}

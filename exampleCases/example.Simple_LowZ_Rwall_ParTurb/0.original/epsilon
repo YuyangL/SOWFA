@@ -1,0 +1,140 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.4.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      epsilon;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+
+dimensions      [0 2 -3 0 0 0 0];
+
+internalField   uniform $epsilon0;
+
+boundaryField
+{
+    lower
+    {
+        type            epsilonWallFunction;
+        Cmu             $Cmu;
+        kappa           $kappa;
+        value           uniform 1e-12;  // Not sure if this is used
+    }
+
+    upper
+    {
+        type            slip;
+
+        /*
+        // If reverse flow, use inflow BC profile, otherwise, use zeroGradient
+        type            freeStream;
+        freeStreamValue uniform $epsilon0;
+        */
+
+        /* Since atmBoundaryLayerInletEpsilon tend to overpredict epsilon by 10 times, not using it
+        type            freeStream;
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletEpsilon;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Cmu             $Cmu;
+            kappa           $kappa;
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            value           uniform $epsilon0;
+        }
+        */
+
+        value           uniform $epsilon0;
+    }
+
+    east
+    {
+        // Since inletValue of k is 0, epsilon is ~0 (avoid FPE) too
+        type            inletOutlet;
+        inletValue      uniform 1e-12;
+
+        /*
+        type            freeStream;
+        freeStreamValue uniform 1e-12;
+        */
+
+        value           uniform $epsilon0;
+    }
+
+    west
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+
+        /*
+        type            atmBoundaryLayerInletEpsilon;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Cmu             $Cmu;
+        kappa           $kappa;
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        */
+
+        value           uniform $epsilon0;
+    }
+
+    south
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+
+        /*
+        type            atmBoundaryLayerInletEpsilon;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Cmu             $Cmu;
+        kappa           $kappa;
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        */
+
+        value           uniform $epsilon0;
+    }
+
+    north
+    {
+        type            inletOutlet;
+        inletValue      uniform 1e-12;
+
+        /*
+        type            freeStream;
+        freeStreamValue uniform 1e-12;
+        */
+
+        value           uniform $epsilon0;
+    }
+}
+
+
+// ************************************************************************* //

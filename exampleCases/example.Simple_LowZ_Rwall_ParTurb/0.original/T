@@ -1,0 +1,77 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T ;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField   uniform $TBottom;
+
+boundaryField
+{
+    lower
+    {
+        type            zeroGradient;
+        value           uniform $TBottom;
+    }
+
+    upper
+    {
+        type            fixedGradient;
+        gradient        uniform $TGradUpper;
+        value           uniform $TTop;
+    }
+
+    west
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+        value           uniform $TBottom;
+    }
+
+    east
+    {
+        type            inletOutlet;
+        inletValue      uniform $TBottom;
+        value           uniform $TBottom;
+    }
+
+    south
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+        value           uniform $TBottom;
+    }
+
+    north
+    {
+        // If reverse flow, use inlet value, otherwise, use zeroGradient
+        type            inletOutlet;
+        inletValue      uniform $TBottom;
+        value           uniform $TBottom;
+    }
+}
+
+
+// ************************************************************************* //

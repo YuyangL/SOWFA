@@ -104,10 +104,10 @@ relaxationFactors
 
     equations
     {
-        "(U|T)"              0.5;
+        "(U|T)"              0.7;
         "(U|T|k|epsilon)Final"       1.0;
         // More relaxed for k and epsilon to be stable
-        "(k|epsilon)"        0.5;
+        "(k|epsilon)"        0.7;
     }
 }
 

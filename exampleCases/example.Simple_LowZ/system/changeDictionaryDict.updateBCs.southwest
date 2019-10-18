@@ -50,6 +50,12 @@ dictionaryReplacement
     {
         boundaryField
         {
+            upper
+            {
+                // Specific to low Z case
+                type            zeroGradient;
+                value           uniform $TBottom;
+            }
             south
             {
                 // For RANS, it should read

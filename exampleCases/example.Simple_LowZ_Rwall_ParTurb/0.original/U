@@ -1,0 +1,122 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform ($U0Mag 0 0);
+
+boundaryField
+{
+    lower
+    {
+        type            fixedValue;
+
+        /* Velocity wall function not necessary anymore since it's inferred from nut wall function thus avoid getting 0 U
+        type            velocityABLWallFunction;
+        print           true;
+        U               U;
+        */
+
+        value           uniform (0 0 0);
+    }
+
+    upper
+    {
+        type            slip;
+        value           $internalField;
+    }
+
+    west
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          (0 0 0);
+        mapMethod       planarInterpolation;
+        value           uniform ($U0Mag 0 0);
+    }
+
+    east
+    {
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+
+        /*
+        type            freeStream;
+        // For reverse flow, east patch falls back to inflow BC profile
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletVelocity;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform ($U0Mag 0 0);  // Don't think this is used;
+        }
+        */
+
+        value           uniform ($U0Mag 0 0);
+    }
+
+    south
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          (0 0 0);
+        mapMethod       planarInterpolation;
+        value           uniform ($U0Mag 0 0);
+    }
+
+    north
+    {
+        // For reverse flow, increase velocity to (0 0 0)
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+
+        /*
+        type            freeStream;
+        // For reverse flow, east patch falls back to inflow BC profile
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletVelocity;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform ($U0Mag 0 0);  // Don't think this is used;
+        }
+        */
+
+        value           uniform ($U0Mag 0 0);
+    }
+}
+
+
+
+// ************************************************************************* //

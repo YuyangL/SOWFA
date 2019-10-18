@@ -1,0 +1,158 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.4.0                                     |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      sampleLineDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+type            sets;
+
+writeControl    writeTime; // Means write the given timestep?
+
+setFormat   raw;
+fields          (
+                Rij
+		        );
+
+interpolationScheme cellPointFace; // Use cell center and vertex and face values
+
+// For parallel twin turbines 3D apart, no yaw
+sets
+(
+    // Vertical line 1D downstream southern turbine
+    oneDdownstreamSouthernTurbine_V
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1353.202 1124.262 0.0);
+        end             (1353.202 1124.262 1000.0);
+        nPoints         1000;
+    }
+    
+    // Vertical line 1D downstream northern turbine
+    oneDdownstreamNorthernTurbine_V
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1101.202 1560.738 0.0);
+        end             (1101.202 1560.738 1000.0);
+        nPoints         1000;
+    }
+    
+    // Horizontal line 1D downstream the turbine in the middle at hub height
+    oneDdownstreamSouthernTurbine_H
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (270.244 3000.0 90.0);
+        end             (2002.295 0.0 90.0);
+        nPoints         1000;
+    }
+    
+    // Horizontal line 1D downstream the turbine in the middle at hub height.
+    // Duplicate of the previous line for plotting naming convenience
+    oneDdownstreamNorthernTurbine_H
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (270.244 3000.0 90.0);
+        end             (2002.295 0.0 90.0);
+        nPoints         1000;
+    }
+    
+    // Vertical line 3D downstream southern turbine
+    threeDdownstreamSouthernTurbine_V
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1571.44 1250.262 0.0);
+        end             (1571.44 1250.262 1000.0);
+        nPoints         1000;
+    }
+    
+    // Vertical line 3D downstream northern turbine
+    threeDdownstreamNorthernTurbine_V
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1319.44 1686.738 0.0);
+        end             (1319.44 1686.738 1000.0);
+        nPoints         1000;
+    }
+    
+    // Horizontal line 3D downstream the turbine in the middle at hub height
+    threeDdownstreamSouthernTurbine_H
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (561.228 3000.0 90.0);
+        end             (2293.279 0.0 90.0);
+        nPoints         1000;
+    }
+    
+    // Horizontal line 3D downstream the turbine in the middle at hub height.
+    // Duplicate of the previous line for plotting naming convenience
+    threeDdownstreamNorthernTurbine_H
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (561.228 3000.0 90.0);
+        end             (2293.279 0.0 90.0);
+        nPoints         1000;
+    }
+    
+    // Vertical line 7D downstream southern turbine
+    sevenDdownstreamSouthernTurbine_V
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (2007.917 1502.262 0.0);
+        end             (2007.917 1502.262 1000.0);
+        nPoints         1000;
+    }
+    
+    // Vertical line 7D downstream northern turbine
+    sevenDdownstreamNorthernTurbine_V
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1755.917 1938.738 0.0);
+        end             (1755.917 1938.738 1000.0);
+        nPoints         1000;
+    }
+    
+    // Horizontal line 7D downstream the turbine in the middle at hub height
+    sevenDdownstreamSouthernTurbine_H
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1143.198 3000.0 90.0);
+        end             (2875.248 0.0 90.0);
+        nPoints         1000;
+    }
+    
+    // Horizontal line 7D downstream the turbine in the middle at hub height.
+    // Duplicate of the previous line for plotting naming convenience
+    sevenDdownstreamNorthernTurbine_H
+    {
+        type            uniform;
+        axis            distance;  // Output distance from start to end
+        start           (1143.198 3000.0 90.0);
+        end             (2875.248 0.0 90.0);
+        nPoints         1000;
+    }
+    
+);
+    
+// *********************************************************************** //  
