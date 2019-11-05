@@ -29,34 +29,34 @@ volVectorField U
 //     mesh
 // );
 
-// Read the gravitational acceleration
-Info << "Reading the gravitational acceleration, g..." << endl;
-uniformDimensionedVectorField g
-(
-    IOobject
-    (
-        "g",
-        runTime.constant(),
-        mesh,
-        IOobject::MUST_READ,
-        IOobject::NO_WRITE
-    )
-);
+// // Read the gravitational acceleration
+// Info << "Reading the gravitational acceleration, g..." << endl;
+// uniformDimensionedVectorField g
+// (
+//     IOobject
+//     (
+//         "g",
+//         runTime.constant(),
+//         mesh,
+//         IOobject::MUST_READ,
+//         IOobject::NO_WRITE
+//     )
+// );
 
-// Create and calculate the velocity flux
-Info << "Creating and calculating velocity flux field, phi..." << endl;
-#   include "createPhi.H"
+// // Create and calculate the velocity flux
+// Info << "Creating and calculating velocity flux field, phi..." << endl;
+// #   include "createPhi.H"
 
-// // Read the transport properties and set up the laminar (molecular) transport model
-// Info << "Reading transport properties..." << endl;
-// #include "readTransportProperties.H"
+// // // Read the transport properties and set up the laminar (molecular) transport model
+// // Info << "Reading transport properties..." << endl;
+// // #include "readTransportProperties.H"
 
-Info << "Creating turbulence model..." << endl;
-singlePhaseTransportModel laminarTransport(U, phi);
-autoPtr<incompressible::turbulenceModel> turbulence
-(
-    incompressible::turbulenceModel::New(U, phi, laminarTransport)
-);
+// Info << "Creating turbulence model..." << endl;
+// singlePhaseTransportModel laminarTransport(U, phi);
+// autoPtr<incompressible::turbulenceModel> turbulence
+// (
+//     incompressible::turbulenceModel::New(U, phi, laminarTransport)
+// );
 
 // // Read mean SGS turbulent viscosity field
 // Info<< "Reading mean SGS viscosity field, nuSGSmean..." << endl;

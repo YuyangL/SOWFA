@@ -33,8 +33,9 @@ Source files:
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "incompressible/singlePhaseTransportModel/singlePhaseTransportModel.H"
-#include "LESModel.H"
+// #include "incompressible/singlePhaseTransportModel/singlePhaseTransportModel.H"
+// #include "LESModel.H"
+// #include "RASModel.H"
 #include "IOdictionary.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -146,7 +147,7 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::AUTO_WRITE
                     ),
-                    -uuPrime2 && symm(fvc::grad(UAvg))  // tau_ij u_i,j = tau_ij Sij, tau_ij = -u_i'u_j'
+                    -uuPrime2 && fvc::grad(UAvg)  // tau_ij u_i, tau_ij = -u_i'u_j'
                 );
 
                 Info << "\nWriting mean resolved turbulence production field, GResolved..." << endl;
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::AUTO_WRITE
                     ),
-                    (-uuPrime2 && symm(fvc::grad(UAvg)))  // GResolved
+                    (-uuPrime2 && fvc::grad(UAvg))  // GResolved
                     + 2.*nuSGSmean*magSqr(symm(fvc::grad(UAvg)))  // GSGSmean
                 );
 
@@ -193,11 +194,92 @@ int main(int argc, char *argv[])
                 Info << "\nMean total turbulence production field, GAvg already exists!" << endl;
             }
 
+            // If bij_pred exists, it's from SOWFA LES ML and calculate mean predicted turbulence production
+            if (IOobject("bij_pred", runTime.timeName(), mesh).headerOk())
+            {
+                // If mean predicted turbulence production field G_pred has not been calculated already, calculate it
+                if (!IOobject("G_pred", runTime.timeName(), mesh).headerOk())
+                {
+                    Info<< "Reading predicted anisotropy tensor field, bij_pred\n" << endl;
+                    volSymmTensorField bij_pred
+                    (
+                        IOobject
+                        (
+                            "bij_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Reading mean resolved TKE field kResolved\n" << endl;
+                    volScalarField kResolved
+                    (
+                        IOobject
+                        (
+                            "kResolved",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Reading mean SGS TKE field kSGSmean\n" << endl;
+                    volScalarField kSGSmean
+                    (
+                        IOobject
+                        (
+                            "kSGSmean",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Computing mean predicted ui'uj' tensor field uuPrime2_pred\n" << endl;
+                    volSymmTensorField uuPrime2_pred(
+                        IOobject(
+                            "uuPrime2_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::NO_WRITE),
+                        2./3.*(kResolved + kSGSmean)*I + 2.*(kResolved + kSGSmean)*bij_pred // ui'uj' = 1/3*2k*I + 2k*bij
+                    );
+
+                    Info << "\nComputing mean predicted turbulence production field G_pred..." << endl;
+                    volScalarField G_pred
+                    (
+                        IOobject
+                        (
+                            "G_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::AUTO_WRITE
+                        ),
+                        -uuPrime2_pred && fvc::grad(UAvg)
+                    );
+
+                    Info << "\nWriting mean predicted turbulence production field G_pred..." << endl;
+                    G_pred.write();
+                }
+                else
+                {
+                    Info << "\nMean predicted turbulence production field G_pred already exists!" << endl;
+                }
+            }
         }
-        // Else if U is found, then it's SOWFA RANS
-        else //if (IOobject("U", runTime.timeName(), mesh).headerOk())
+        // Otherwise it's SOWFA RANS
+        else
         {
-            if (!IOobject("GAvg", runTime.timeName(), mesh).headerOk())
+            if (!IOobject("G", runTime.timeName(), mesh).headerOk())
             {
                 // Read turbulent viscosity field
                 Info<< "Reading Reynolds-averaged turbulent viscosity field, nut..." << endl;
@@ -236,7 +318,6 @@ int main(int argc, char *argv[])
                     )
                 );
 
-
                 IOdictionary transportDict
                 (
                     IOobject
@@ -262,7 +343,7 @@ int main(int argc, char *argv[])
                     transportDict.lookupOrDefault<dimensionedScalar>("mix_ratio_cap", 0.5)
                 );
 
-                Info << "\nRetrieving Reynolds-avgeraged turbulence production field, GAvg..." << endl;
+                Info << "\nRetrieving (LES/ML blended) turbulence production field, G..." << endl;
                 scalar mix_ratio = 0.;
                 scalar t = runTime.value();
 
@@ -274,11 +355,11 @@ int main(int argc, char *argv[])
                 }
 
                 Info << "LES/ML-RANS bij mixing ratio is " << mix_ratio << endl;
-                volScalarField GAvg
+                volScalarField G
                 (
                     IOobject
                     (
-                        "GAvg",
+                        "G",
                         runTime.timeName(),
                         mesh,
                         IOobject::NO_READ,
@@ -289,17 +370,60 @@ int main(int argc, char *argv[])
                     && fvc::grad(U)
                 );
 
-                Info << "\nWriting mean turbulence production field, GAvg..." << endl;
-                GAvg.write();
+                Info << "\nWriting (LES/ML blended) turbulence production field, G..." << endl;
+                G.write();
 
-                scalar gavg_min = min(GAvg).value();
-                scalar gavg_max = max(GAvg).value();
-                scalar gavg_mean = GAvg.weightedAverage(mesh.V()).value();
-                Info << "Min GAvg is " << gavg_min << "; max is " << gavg_max << "; weight mean is " << gavg_mean << endl;
+                scalar g_min = min(G).value();
+                scalar g_max = max(G).value();
+                scalar g_mean = G.weightedAverage(mesh.V()).value();
+                Info << "Min G is " << g_min << "; max is " << g_max << "; weight mean is " << g_mean << endl;
             }
             else
             {
-                Info << "\nMean turbulence production field, GAvg already exists!" << endl;
+                Info << "\nReynolds-averaged turbulence production field, G already exists!" << endl;
+            }
+
+            // If bij_pred exists, it's from SOWFA RANS ML and calculate mean predicted turbulence production
+            if (IOobject("bij_pred", runTime.timeName(), mesh).headerOk())
+            {
+                // If mean predicted turbulence production field G_pred has not been calculated already, calculate it
+                if (!IOobject("G_pred", runTime.timeName(), mesh).headerOk())
+                {
+                    Info<< "Reading predicted anisotropy tensor field, bij_pred\n" << endl;
+                    volSymmTensorField bij_pred
+                    (
+                        IOobject
+                        (
+                            "bij_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info << "\nComputing mean predicted turbulence production field G_pred..." << endl;
+                    volScalarField G_pred
+                    (
+                        IOobject
+                        (
+                            "G_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::AUTO_WRITE
+                        ),
+                        -(2./3.*k*I + 2.*k*bij_pred) && fvc::grad(U)
+                    );
+
+                    Info << "\nWriting mean predicted turbulence production field G_pred..." << endl;
+                    G_pred.write();
+                }
+                else
+                {
+                    Info << "\nMean predicted turbulence production field G_pred already exists!" << endl;
+                }
             }
         }
     }

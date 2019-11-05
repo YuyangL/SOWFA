@@ -11,6 +11,9 @@
         "oneEqEddyABL.C": "cpp",
         "GenEddyViscABL.C": "cpp",
         "calcAnisotropyTensorField.C": "cpp",
-        "calcDivDevRField.C": "cpp"
+        "calcDivDevRField.C": "cpp",
+        "calcDevRGradientField.C": "cpp",
+        "calcGradDevR.C": "cpp",
+        "calc_dDevRab_db.C": "cpp"
     }
 }

@@ -1,0 +1,74 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.1.x                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      nut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+
+dimensions      [0 2 -1 0 0 0 0];
+
+internalField   uniform $nuSgs0;
+
+boundaryField
+{
+
+    lower
+    {
+        // Should ensure y+ > 30 and 1st CCZ > 50z0 when using
+        type                nutkAtmRoughWallFunction;
+        z0                  uniform $z0;
+
+        /*
+        // nutkAtmRoughWallFunction might be better
+        // although it should to be used with the atmBoundaryLayerInletVelocity boundary condition
+        type            nutkRoughWallFunction;
+        Ks              uniform $Ks;  // min(30z0, 0.5delta)
+        Cs              uniform $Cs;  // Cs = E/Ks*z0 with E = 9.73
+        */
+
+        value           uniform $nuSgs0;
+    }
+    upper
+    {
+        // Maybe slip?
+        type            calculated;  // zeroGradient;
+        value           uniform 0.0;  // Placeholder
+    }
+    west
+    {
+        // Maybe zeroGradient?
+        type            calculated;
+        value           uniform 0.0;
+    }
+    east
+    {
+        type            calculated;
+        value           uniform 0.0;
+    }
+    north
+    {
+        type            calculated;
+        value           uniform 0.0;
+    }
+    south
+    {
+        type            calculated;
+        value           uniform 0.0;
+    }
+}
+
+
+// ************************************************************************* //

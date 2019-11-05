@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.0                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      topoSetDict.local.1;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 2nd refinement -- inner box around turbines
+// 1D to rotor sides;
+// 1D to rotor tops;
+// 5D to turbine back;
+// 2D to turbine front
+
+actions
+(
+    {
+        name         local;
+        type         cellSet;
+        action       new;
+        source       rotatedBoxToCell; //boxToCell
+        sourceInfo
+        {
+            origin (   994.344  989.821   0.0); //900.0 1325.0   0.0);
+            i      (   763.835  441.0     0.0); //1950.0    0.0   0.0);
+            j      (  -189.0    327.358   0.0); //0.0  350.0   0.0);
+            k      (     0.0    0.0     279.0);
+        }
+    }
+
+);
+
+// ************************************************************************* //

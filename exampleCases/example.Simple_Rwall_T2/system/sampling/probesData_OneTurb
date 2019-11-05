@@ -1,0 +1,49 @@
+probes
+{
+functionObjectLibs  ("libsampling.so");
+
+type                probes;
+name                probes_OneTurb;
+
+outputControl       adjustableTime;  // timeStep;
+// If adjustableTime, use writeInterval that writes every writeInterval s of simulation time
+writeInterval       50;
+// If timeStep, use outputInterval instead
+//outputInterval    28;  // 0.036 s per timestep then 28 timesetps per s
+
+// Fields to be probed. runTime modifiable!
+fields
+(
+    UAvg
+    uuPrime2
+);
+
+// Locations to be probed. runTime modifiable!
+// For the case of one turbine
+// For each along wind location in wake, hub and apex height probed;
+// for each along wind location in upstream, hub height probed
+// -3D, -1D, 1D, 2D, 4D
+probeLocations
+(
+    (788.857 1089.422 90)      // 3D upstream upwind turbine at hub height
+    (1007.096 1215.422 90)     // 1D upstream upwind turbine at hub height
+
+    (1225.334 1341.422 90)     // 1D downstream upwind turbine at hub height
+    (1225.334 1341.422 153)    // 1D downstream upwind turbine at turbine apex
+
+    (1334.453 1404.422 90)     // 2D downstream upwind turbine at hub height
+    (1334.453 1404.422 153)    // 2D downstream upwind turbine at turbine apex
+
+    (1552.692 1530.422 90)     // 4D downstream upwind turbine at hub height
+    (1552.692 1530.422 153)    // 4D downstream upwind turbine at turbine apex
+
+//    (1989.168 1782.422 90)     // 8D downstream upwind turbine at hub height
+//    (1989.168 1782.422 153)    // 8D downstream upwind turbine at turbine apex
+
+//    (2098.288 1845.422 90)     // 9D downstream upwind turbine at hub height
+//    (2098.288 1845.422 153)    // 9D downstream upwind turbine at turbine apex
+    
+//    (2316.526 1971.422 90)     // 11D downstream upwind turbine at hub height
+//    (2316.526 1971.422 153)    // 11d downstream upwind turbine at turbine apex
+);
+}

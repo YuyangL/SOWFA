@@ -105,20 +105,6 @@ int main(int argc, char *argv[])
                     mesh
                 );
 
-                Info<< "Reading mean resolved TKE field, kResolved\n" << endl;
-                volScalarField kResolved
-                (
-                    IOobject
-                    (
-                        "kResolved",
-                        runTime.timeName(),
-                        mesh,
-                        IOobject::MUST_READ,
-                        IOobject::NO_WRITE
-                    ),
-                    mesh
-                );
-
                 Info << "\nComputing mean deviatoric SGS Reynolds stress field, devRSGS..." << endl;
                 volSymmTensorField devRSGS
                 (
@@ -130,7 +116,7 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::NO_WRITE
                     ),
-                    - nuSGSmean*twoSymm(fvc::grad(UAvg))
+                    -nuSGSmean*twoSymm(fvc::grad(UAvg))
                 );
 
                 Info << "\nComputing mean deviatoric total Reynolds stress divergence vector field divDevR..." << endl;
@@ -144,7 +130,7 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::AUTO_WRITE
                     ),
-                    -fvc::div(uuPrime2 - 2/3.*kResolved*I + devRSGS)  // devRResolved is RResolved - 2/3*kResolved*I
+                    -fvc::div(dev(uuPrime2) + devRSGS)  // devRResolved is RResolved - 2/3*kResolved*I
                 );
 
                 Info << "\nWriting mean deviatoric total Reynolds stress divergence vector field, divDevR..." << endl;
@@ -158,11 +144,94 @@ int main(int argc, char *argv[])
             {
                 Info << "\nMean deviatoric total Reynolds stress vector field divDevR already exists!" << endl;
             }
+
+            // If predicted anisotropy tensor bij_pred exists, it's from SOWFA LES ML
+            // and calculate mean predicted deviatoric Ryenolds stress divergence vector field divDevR_pred
+            if (IOobject("bij_pred", runTime.timeName(), mesh).headerOk())
+            {
+                // If mean predicted deviatoric Ryenolds stress divergence vector field divDevR_pred has not been calculated already, calculate it
+                if (!IOobject("divDevR_pred", runTime.timeName(), mesh).headerOk())
+                {
+                    Info<< "Reading predicted anisotropy tensor field, bij_pred\n" << endl;
+                    volSymmTensorField bij_pred
+                    (
+                        IOobject
+                        (
+                            "bij_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Reading mean resolved TKE field kResolved\n" << endl;
+                    volScalarField kResolved
+                    (
+                        IOobject
+                        (
+                            "kResolved",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Reading mean SGS TKE field kSGSmean\n" << endl;
+                    volScalarField kSGSmean
+                    (
+                        IOobject
+                        (
+                            "kSGSmean",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Computing mean predicted deviatoric ui'uj' tensor field devR_pred\n" << endl;
+                    volSymmTensorField devR_pred
+                    (
+                        IOobject
+                        (
+                            "devR_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        2.*(kResolved + kSGSmean)*bij_pred // ui'uj'^D = 1/3*2k*I + 2k*bij - 1/3*2k*I
+                    );
+
+                    Info << "\nComputing mean predicted deviatoric Reynolds stress divergence vector field divDevR_pred..." << endl;
+                    volVectorField divDevR_pred
+                    (
+                        IOobject
+                        (
+                            "divDevR_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::AUTO_WRITE
+                        ),
+                        -fvc::div(devR_pred)
+                    );
+                }
+                else
+                {
+                    Info << "\nMean predicted deviatoric Reynolds stress vector field divDevR_pred already exists!" << endl;
+                }
+            }
         }
         // Otherwise it's SOWFA RANS
         else
         {
-            if (!IOobject("divDevR", runTime.timeName(), mesh).headerOk())
+            if (!IOobject("divDevR_blend", runTime.timeName(), mesh).headerOk())
             {
                 // Read turbulent kinetic energy field
                 Info<< "Reading (LES/ML blended) Reynolds stress field Rij..." << endl;
@@ -179,56 +248,26 @@ int main(int argc, char *argv[])
                     mesh
                 );
 
-                // Read turbulent kinetic energy field
-                Info<< "Reading turbulent kinetic energy field, k..." << endl;
-                volScalarField k
-                (
-                    IOobject
-                    (
-                        "k",
-                        runTime.timeName(),
-                        mesh,
-                        IOobject::MUST_READ,
-                        IOobject::NO_WRITE
-                    ),
-                    mesh
-                );
+                // Info << "\nComputing Reynolds-averaged deviatoric Reynolds stress divergence vector field divDevR..." << endl;
+                // volVectorField divDevR
+                // (
+                //     IOobject
+                //     (
+                //         "divDevR",
+                //         runTime.timeName(),
+                //         mesh,
+                //         IOobject::NO_READ,
+                //         IOobject::AUTO_WRITE
+                //     ),
+                //     -fvc::div(-nut*twoSymm(fvc::grad(U)))
+                // );
 
-                // Read turbulent viscosity field
-                Info<< "Reading turbulent viscosity field nut..." << endl;
-                volScalarField nut
-                (
-                    IOobject
-                    (
-                        "nut",
-                        runTime.timeName(),
-                        mesh,
-                        IOobject::MUST_READ,
-                        IOobject::NO_WRITE
-                    ),
-                    mesh
-                );
+                // Info << "\nWriting Reynolds-averaged deviatoric Reynolds stress divergence vector field divDevR..." << endl;
+                // divDevR.write();
 
-                Info << "\nComputing Reynolds-averaged deviatoric Reynolds stress divergence vector field divDevR..." << endl;
-                volVectorField divDevR
-                (
-                    IOobject
-                    (
-                        "divDevR",
-                        runTime.timeName(),
-                        mesh,
-                        IOobject::NO_READ,
-                        IOobject::AUTO_WRITE
-                    ),
-                    -fvc::div(-nut*twoSymm(fvc::grad(U)))
-                );
-
-                Info << "\nWriting Reynolds-averaged deviatoric Reynolds stress divergence vector field divDevR..." << endl;
-                divDevR.write();
-
-                scalar divDevR_min = min(cmptMin(divDevR));
-                scalar divDevR_max = max(cmptMax(divDevR));
-                Info << "Min divDevR is " << divDevR_min << "; max is " << divDevR_max << endl;
+                // scalar divDevR_min = min(cmptMin(divDevR));
+                // scalar divDevR_max = max(cmptMax(divDevR));
+                // Info << "Min divDevR is " << divDevR_min << "; max is " << divDevR_max << endl;
 
                 // From here blended divDevR is calculated
                 IOdictionary transportDict
@@ -278,7 +317,7 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::AUTO_WRITE
                     ),
-                    -fvc::div(Rij - 2/3.*k*I)
+                    -fvc::div(dev(Rij))
                 );
 
                 Info << "\nWriting blended Reynolds-avgeraged deviatoric Reynolds stress divergence vector field divDevR_blend..." << endl;
@@ -291,6 +330,75 @@ int main(int argc, char *argv[])
             else
             {
                 Info << "\nReynolds-avgeraged deviatoric Reynolds stress divergence vector field divDevR and divDevR_blend already exist!" << endl;
+            }
+
+            // If predicted anisotropy tensor bij_pred exists, it's from SOWFA LES ML
+            // and calculate mean predicted deviatoric Ryenolds stress divergence vector field divDevR_pred
+            if (IOobject("bij_pred", runTime.timeName(), mesh).headerOk())
+            {
+                // If mean predicted deviatoric Ryenolds stress divergence vector field divDevR_pred has not been calculated already, calculate it
+                if (!IOobject("divDevR_pred", runTime.timeName(), mesh).headerOk())
+                {
+                    Info<< "Reading predicted anisotropy tensor field, bij_pred\n" << endl;
+                    volSymmTensorField bij_pred
+                    (
+                        IOobject
+                        (
+                            "bij_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Reading mean TKE field k\n" << endl;
+                    volScalarField k
+                    (
+                        IOobject
+                        (
+                            "k",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::MUST_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        mesh
+                    );
+
+                    Info<< "Computing mean predicted deviatoric ui'uj' tensor field devR_pred\n" << endl;
+                    volSymmTensorField devR_pred
+                    (
+                        IOobject
+                        (
+                            "devR_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::NO_WRITE
+                        ),
+                        2.*k*bij_pred // ui'uj'^D = 1/3*2k*I + 2k*bij - 1/3*2k*I
+                    );
+
+                    Info << "\nComputing mean predicted deviatoric Reynolds stress divergence vector field divDevR_pred..." << endl;
+                    volVectorField divDevR_pred
+                    (
+                        IOobject
+                        (
+                            "divDevR_pred",
+                            runTime.timeName(),
+                            mesh,
+                            IOobject::NO_READ,
+                            IOobject::AUTO_WRITE
+                        ),
+                        -fvc::div(devR_pred)
+                    );
+                }
+                else
+                {
+                    Info << "\nMean predicted deviatoric Reynolds stress vector field divDevR_pred already exists!" << endl;
+                }
             }
         }
     }

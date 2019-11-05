@@ -1,0 +1,139 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      k ;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+
+dimensions      [0 2 -2 0 0 0 0];
+
+internalField   uniform $k0;
+
+boundaryField
+{
+    lower
+    {
+        type            kqRWallFunction;  // It's simply zeroGradient
+        value           uniform 0;
+    }
+
+    upper
+    {
+        type            slip;
+        value           $internalField;
+    }
+
+    east
+    {
+        // Since U has inletValue of (0 0 0), k is 0 too
+        type            inletOutlet;
+        inletValue      uniform 0;
+
+        /*
+        type            freeStream;
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletK;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform $k0;
+        }
+        */
+
+        value           uniform $k0;
+    }
+
+    west
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+
+        /*
+        type            atmBoundaryLayerInletK;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        Cmu             $Cmu;
+        kappa           $kappa;
+        */
+
+        value           uniform $k0;
+
+    }
+
+    south
+    {
+        type            timeVaryingMappedFixedValue;
+        setAverage      0;
+        perturb         0.0;
+        offset          0;
+        mapMethod       planarInterpolation;
+
+        /*
+        type            atmBoundaryLayerInletK;
+        flowDir         (0.8660254037844 0.5 0);
+        zDir            (0 0 1);
+        Uref            $U0Mag;
+        Zref            $windHeight;
+        z0              uniform $z0;
+        zGround         uniform 0.0;
+        Cmu             $Cmu;
+        kappa           $kappa;
+        */
+
+        value           uniform $k0;
+    }
+
+    north
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+
+        /*
+        type            freeStream;
+        freeStreamBC
+        {
+            type            atmBoundaryLayerInletK;
+            flowDir         (0.8660254037844 0.5 0);
+            zDir            (0 0 1);
+            Uref            $U0Mag;
+            Zref            $windHeight;
+            z0              uniform $z0;
+            zGround         uniform 0.0;
+            Cmu             $Cmu;
+            kappa           $kappa;
+            value           uniform $k0;
+        }
+        */
+
+        value           uniform $k0;
+    }
+}
+
+
+// ************************************************************************* //

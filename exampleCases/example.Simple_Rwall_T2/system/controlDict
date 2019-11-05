@@ -1,0 +1,89 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+  application       windPlantSimpleSolver_Rwall_T2;
+
+  libs              ("libuserfiniteVolume.so" "libSOWFAincompressibleRASModels.so");
+
+  startFrom         latestTime;
+
+  startTime         0;
+
+  stopAt            endTime;
+
+  endTime           25000;
+
+  deltaT            1;
+
+  writeControl      adjustableRunTime;
+
+  writeInterval     1000;
+
+  purgeWrite        0;
+
+  writeFormat       binary;
+
+  writePrecision    12;
+
+  writeCompression  compressed;
+
+  timeFormat        general;
+
+  timePrecision     12;
+
+  runTimeModifiable yes;
+
+  // adjustTimeStep    yes;
+
+  // maxCo             1;
+
+  // maxDeltaT         25.0;
+
+  functions
+  {
+     // #include "calcFvcGrad"
+    #include "sampling/sliceDataInstantaneous_OneTurb"
+    #include "sampling/probesData_OneTurb"
+
+    residuals
+    {
+        functionObjectLibs ("libutilityFunctionObjects.so");
+        type            residuals;
+        outputControl   timeStep;
+        outputInterval  1;
+        fields
+        (
+            U
+            p_rgh
+            T
+            epsilon
+            k
+        );
+    }
+
+    /*
+    // Doesn't work
+    R
+    {
+      type             turbulenceFields;
+      libs             ("libfieldFunctionObjects.so");
+      field            R;
+    }
+    */
+  }
+
+// ************************************************************************* //

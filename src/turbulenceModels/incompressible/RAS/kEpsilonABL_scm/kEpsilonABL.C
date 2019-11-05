@@ -602,7 +602,7 @@ void kEpsilonABL::correct()
     // Compute maximum length scale
     computeMaxLengthScale();
 
-    // Compute the shear production term. This is where eddy-vicosity approximation comes into play in e-epsilon model
+    // Compute the shear production term. This is where eddy-vicosity approximation comes into play in k-epsilon model
     // G = 2nut*Sij:Sij but also 2nut*Sij:grad(U),
     // where symm(grad(U)) = 0.5(u_i,j + u_j,i) = Sij,
     // and magSqr(Sij) is Sij:Sij
