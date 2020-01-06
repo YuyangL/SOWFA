@@ -13,6 +13,21 @@ volVectorField U
     mesh
 );
 
+Info << "Reading mean velocity field UAvg..." << endl;
+volVectorField UAvg
+(
+    IOobject
+    (
+        "UAvg",
+        runTime.timeName(),
+        mesh,
+        IOobject::MUST_READ,
+        IOobject::NO_WRITE
+    ),
+    mesh
+);
+
+
 // Read the temperature field
 Info << "Reading instantenous temperatire field, T..." << endl;
 volScalarField T

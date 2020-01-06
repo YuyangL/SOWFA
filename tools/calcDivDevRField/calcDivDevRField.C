@@ -221,6 +221,9 @@ int main(int argc, char *argv[])
                         ),
                         -fvc::div(devR_pred)
                     );
+
+                    Info << "\nWriting mean predicted deviatoric Reynolds stress divergence vector field, divDevR_pred..." << endl;
+                    divDevR_pred.write();
                 }
                 else
                 {
@@ -394,6 +397,9 @@ int main(int argc, char *argv[])
                         ),
                         -fvc::div(devR_pred)
                     );
+
+                    Info << "\nWriting mean predicted deviatoric Reynolds stress divergence vector field, divDevR_pred..." << endl;
+                    divDevR_pred.write();
                 }
                 else
                 {

@@ -499,14 +499,18 @@ tmp<fvVectorMatrix> kEpsilonABL::divDevReff(volVectorField& U) const
     //     Info << "Min LES/ML bij is " << bij_min << "; max is " << bij_max << endl;
     // }
 
+
+    // FIXME: the 2 in term [8] and [9] are redundant?
+
+
     return
     (
     //   - fvm::laplacian(nuEff(), U)
     //   - fvc::div(nuEff()*dev(T(fvc::grad(U))))
         - fvm::laplacian(nu(), U)  // ...[1]
         - fvc::div(nu()*dev(T(fvc::grad(U))))  // ...[1]
-        - fvm::laplacian((1. - mix_ratio)*2.*nut_, U)  // ...[8]
-        - fvc::div((1. - mix_ratio)*2.*nut_*T(fvc::grad(U)))  // ...[9]
+        - fvm::laplacian((1. - mix_ratio)*nut_, U)  // ...[8]
+        - fvc::div((1. - mix_ratio)*nut_*T(fvc::grad(U)))  // ...[9]
         // - fvc::div((1. - mix_ratio)*nut_*twoSymm(fvc::grad(U))
         // + mix_ratio*(-2.*k_*bij_))
         - fvc::div(mix_ratio*(-2.*k_*bij_))  // ...[7]

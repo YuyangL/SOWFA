@@ -58,38 +58,10 @@ int main(int argc, char *argv[])
 
         #include "readFields.H"
 
-        if (!IOobject("epsilonSGS", runTime.timeName(), mesh).headerOk())
-        {
-            Info << "\nRetrieving SGS dissipation rate field, epsilonSGS..." << endl;
-            volScalarField epsilonSGS
-            (
-                IOobject
-                (
-                    "epsilonSGS",
-                    runTime.timeName(),
-                    mesh,
-                    IOobject::NO_READ,
-                    IOobject::AUTO_WRITE
-                ),
-                turbulence->epsilon()
-            );
-
-            Info << "\nWriting SGS dissipation rate field, epsilonSGS..." << endl;
-            epsilonSGS.write();
-
-            scalar epssgs_min = min(epsilonSGS).value();
-            scalar epssgs_max = max(epsilonSGS).value();
-            Info << "Min epsilonSGS is " << epssgs_min << "; max is " << epssgs_max << endl;
-        }
-        else
-        {
-            Info << "\nSGS dissipation rate field epsilonSGS already exists!" << endl;
-        }
-
         // If epsilonResolved is not calculated already, calculate it
         if (!IOobject("epsilonResolved", runTime.timeName(), mesh).headerOk())
         {
-            Info << "\nRetrieving resolved dissipation rate field, epsilonResolved..." << endl;
+            Info << "\nRetrieving mean resolved dissipation rate field, epsilonResolved..." << endl;
             volScalarField epsilonResolved
             (
                 IOobject
@@ -100,10 +72,10 @@ int main(int argc, char *argv[])
                     IOobject::NO_READ,
                     IOobject::AUTO_WRITE
                 ),
-                2.*nu*(symm(fvc::grad(U)) && symm(fvc::grad(U)))
+                2.*nu*(symm(fvc::grad(UAvg)) && symm(fvc::grad(UAvg)))
             );
 
-            Info << "\nWriting resolved dissipation rate field, epsilonResolved..." << endl;
+            Info << "\nWriting mean resolved dissipation rate field, epsilonResolved..." << endl;
             epsilonResolved.write();
 
             scalar epsresolved_min = min(epsilonResolved).value();
@@ -112,13 +84,27 @@ int main(int argc, char *argv[])
         }
         else
         {
-            Info << "\nResolved dissipation rate field epsilonResolved already exists!" << endl;
+            Info << "\nMean resolved dissipation rate field epsilonResolved already exists!" << endl;
         }
 
         // If epsilonTotal is not calculated already, calculate it
         if (!IOobject("epsilonTotal", runTime.timeName(), mesh).headerOk())
         {
-            Info << "\nRetrieving total dissipation rate field, epsilonTotal..." << endl;
+            Info << "\nReading mean SGS dissipation rate field epsilonSGSmean..." << endl;
+            volScalarField epsilonSGSmean
+            (
+                IOobject
+                (
+                    "epsilonSGSmean",
+                    runTime.timeName(),
+                    mesh,
+                    IOobject::MUST_READ,
+                    IOobject::NO_WRITE
+                ),
+                mesh
+            );
+
+            Info << "\nRetrieving mean total dissipation rate field, epsilonTotal..." << endl;
             volScalarField epsilonTotal
             (
                 IOobject
@@ -129,30 +115,30 @@ int main(int argc, char *argv[])
                     IOobject::NO_READ,
                     IOobject::AUTO_WRITE
                 ),
-                2.*nu*(symm(fvc::grad(U)) && symm(fvc::grad(U))) + turbulence->epsilon()
+                2.*nu*(symm(fvc::grad(UAvg)) && symm(fvc::grad(UAvg))) + epsilonSGSmean
             );
 
-            Info << "\nWriting total dissipation rate field, epsilonTotal..." << endl;
+            Info << "\nWriting mean total dissipation rate field, epsilonTotal..." << endl;
             epsilonTotal.write();
 
             scalar epstot_min = min(epsilonTotal).value();
             scalar epstot_max = max(epsilonTotal).value();
-            Info << "Min epsTotal is " << epstot_min << "; max is " << epstot_max << endl;
+            Info << "Min epsilonTotal is " << epstot_min << "; max is " << epstot_max << endl;
         }
         else
         {
-            Info << "\nTotal dissipation rate field epsilonTotal already exists!" << endl;
+            Info << "\nMean total dissipation rate field epsilonTotal already exists!" << endl;
         }
 
         // If U' exists, calculate resolved and total TKE as well
-        if (IOobject("Uprime", runTime.timeName(), mesh).headerOk())
+        if (IOobject("uuPrime2", runTime.timeName(), mesh).headerOk())
         {
-            Info<< "Reading fluctuating velocity field, Uprime\n" << endl;
-            volVectorField Uprime
+            Info<< "Reading mean resolved turbulent stress field, uuPrime2\n" << endl;
+            volSymmTensorField uuPrime2
             (
                 IOobject
                 (
-                    "Uprime",
+                    "uuPrime2",
                     runTime.timeName(),
                     mesh,
                     IOobject::MUST_READ,
@@ -164,7 +150,7 @@ int main(int argc, char *argv[])
             // If kResolved is not calculated already, calculate it
             if (!IOobject("kResolved", runTime.timeName(), mesh).headerOk())
             {
-                Info << "\nRetrieving resolved turbulent kinetic energy field, kResolved..." << endl;
+                Info << "\nRetrieving mean resolved turbulent kinetic energy field, kResolved..." << endl;
                 volScalarField kResolved
                 (
                     IOobject
@@ -175,10 +161,10 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::AUTO_WRITE
                     ),
-                    0.5*(tr(sqr(Uprime)))
+                    0.5*(tr(uuPrime2))
                 );
 
-                Info << "\nWriting resolved turbulent kinetic energy field, kResolved..." << endl;
+                Info << "\nWriting mean resolved turbulent kinetic energy field, kResolved..." << endl;
                 kResolved.write();
 
                 scalar kresolved_min = min(kResolved).value();
@@ -187,18 +173,18 @@ int main(int argc, char *argv[])
             }
             else
             {
-                Info << "\nResolved turbulent kinetic energy field, kResolved already exists!" << endl;
+                Info << "\nMean resolved turbulent kinetic energy field kResolved already exists!" << endl;
             }
 
             // If kTotal is not calculated already, calculate it
             if (!IOobject("kTotal", runTime.timeName(), mesh).headerOk())
             {
-                Info<< "Reading SGS turbulent kinetic energy field, k\n" << endl;
-                volScalarField k
+                Info<< "Reading mean SGS turbulent kinetic energy field, kSGSmean\n" << endl;
+                volScalarField kSGSmean
                 (
                     IOobject
                     (
-                        "k",
+                        "kSGSmean",
                         runTime.timeName(),
                         mesh,
                         IOobject::MUST_READ,
@@ -218,10 +204,10 @@ int main(int argc, char *argv[])
                         IOobject::NO_READ,
                         IOobject::AUTO_WRITE
                     ),
-                    0.5*(tr(sqr(Uprime))) + k
+                    0.5*(tr(uuPrime2)) + kSGSmean
                 );
 
-                Info << "\nWriting total turbulent kinetic energy field, kTotal..." << endl;
+                Info << "\nWriting mean total turbulent kinetic energy field, kTotal..." << endl;
                 kTotal.write();
 
                 scalar ktot_min = min(kTotal).value();
@@ -230,12 +216,12 @@ int main(int argc, char *argv[])
             }
             else
             {
-                Info << "\nTotal turbulent kinetic energy field kTotal already exists!" << endl;
+                Info << "\nMean total turbulent kinetic energy field kTotal already exists!" << endl;
             }
         }
         else
         {
-            Info << "\nFluctuating velocity field Uprime not found! Not calculating resolved and total turbulent kinetic energy kResolved and kTotal!" << endl;
+            Info << "\nMean resolved turbulent stress field uuPrime2 not found! Not calculating mean resolved and total turbulent kinetic energy kResolved and kTotal!" << endl;
         }
 
     }
